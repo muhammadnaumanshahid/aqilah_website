@@ -80,13 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Desktop & Mobile FAB Injection
-    const fabHTML = `
-        <div class="fab-container">
-            <a href="index.html#enquire" class="fab-btn">Book Consultation</a>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', fabHTML);
 
     // 2. Fullscreen Mobile Overlay Menu Injection
     const overlayHTML = `

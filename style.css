@@ -872,44 +872,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     border-radius: 2px;
 }
 
-/* 2. Floating Action Button (FAB) */
-.fab-container {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    z-index: 900;
-}
-
-.fab-btn {
-    background-color: var(--color-text-dark);
-    color: #fff;
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    font-weight: 500;
-    font-size: 0.95rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    display: inline-block;
-}
-
-.fab-btn:hover {
-    background-color: var(--color-accent);
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(122, 40, 40, 0.25);
-    color: #fff;
-}
-
-/* Hide FAB on small screens where it crushes content, or scale it down */
-@media (max-width: 768px) {
-    .fab-container { right: 20px; bottom: 20px; }
-    .fab-btn { padding: 0.8rem 1.5rem; font-size: 0.85rem; }
-}
-
-@media (max-width: 480px) {
-    .fab-container { display: none; } /* Better to rely on mobile nav CTA on tiny screens */
-}
 
 /* 3. Immersive Dark Fullscreen Overlay Menu */
 .mobile-overlay {
