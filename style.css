@@ -42,6 +42,7 @@ h1, h2, h3, h4 {
     font-family: var(--font-heading);
     font-weight: 400;
     line-height: 1.2;
+    letter-spacing: -1px;
 }
 
 a {
@@ -979,6 +980,7 @@ body.no-scroll {
     background-size: cover;
     background-position: center;
     background-color: #111;
+    background-attachment: fixed;
     margin-bottom: 4rem;
 }
 .project-hero::after {

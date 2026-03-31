@@ -47,33 +47,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Dummy Form Submission handling
+    // Formspree Live Submission Interception
     const form = document.getElementById('enquiry-form');
     const formMessage = document.getElementById('form-message');
 
     if(form) {
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // In a real scenario, an AJAX fetch request would be made here.
             
-            // Simulating API call
-            const btn = form.querySelector('.btn-submit');
+            const btn = form.querySelector('.btn-submit') || form.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
             btn.innerText = 'Sending...';
             btn.disabled = true;
 
-            setTimeout(() => {
-                form.reset();
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    form.reset();
+                    formMessage.style.color = '#2e7d32'; // Success Green
+                    formMessage.innerText = 'Message received. We will be in touch shortly!';
+                } else {
+                    const data = await response.json();
+                    if (Object.hasOwn(data, 'errors')) {
+                        formMessage.innerText = data["errors"].map(error => error["message"]).join(", ");
+                    } else {
+                        formMessage.innerText = 'Oops! There was a problem submitting your form.';
+                    }
+                    formMessage.style.color = '#c62828'; // Error Red
+                }
+            } catch (error) {
+                formMessage.style.color = '#c62828';
+                formMessage.innerText = 'Network error. Please try again.';
+            } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
                 formMessage.style.display = 'block';
-                formMessage.innerText = 'Thank you for your enquiry. Aqilah will be in touch shortly.';
                 
                 // Hide message after 5 seconds
                 setTimeout(() => {
                     formMessage.style.display = 'none';
+                    formMessage.innerText = '';
                 }, 5000);
-            }, 1500);
+            }
         });
     }
 
