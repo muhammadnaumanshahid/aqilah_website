@@ -92,8 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <a href="index.html#enquire" class="btn-primary overlay-link">Book Now</a>
             </nav>
             <div class="overlay-social">
-                <a href="https://instagram.com/home.withaqilah" target="_blank" rel="noopener noreferrer">Instagram</a>
-                <a href="https://youtube.com/@homewithaqilah" target="_blank" rel="noopener noreferrer">YouTube</a>
+                <a href="https://www.instagram.com/home.withaqilah" target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href="https://www.youtube.com/@homewithaqilah" target="_blank" rel="noopener noreferrer">YouTube</a>
             </div>
         </div>
     `;
