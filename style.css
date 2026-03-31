@@ -1123,3 +1123,49 @@ body.no-scroll {
 @media (max-width: 768px) {
     .project-cta h2 { font-size: 2.5rem; }
 }
+
+/* =========================================================================
+   PROJECT PAGE LAYOUT PATCHES (OVERRIDING STANDARD INNER-PAGE BEHAVIOR)
+   ========================================================================= */
+
+/* 1. Header Clash Fix */
+body.project-page .navbar {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+body.project-page .navbar.scrolled {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+    border-bottom: none !important;
+}
+/* Ensure links are white when transparent, dark when scrolled */
+body.project-page .navbar:not(.scrolled) .logo, 
+body.project-page .navbar:not(.scrolled) nav a, 
+body.project-page .navbar:not(.scrolled) .social-icons a {
+    color: #fff !important; 
+}
+body.project-page .navbar:not(.scrolled) .mobile-menu-btn span {
+    background: #fff !important;
+}
+
+/* 2. Gallery Alignment Fix */
+.curated-gallery .gallery-item img {
+    height: 500px !important;
+    width: 100% !important;
+    object-fit: cover !important;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
+}
+
+/* 3. Excessive Gaps Fix */
+.project-meta { margin-bottom: 4rem !important; }
+.project-narrative { margin-bottom: 4rem !important; }
+.curated-gallery { margin-bottom: 4rem !important; }
+.project-testimonial {
+    margin: 0 auto 4rem !important; /* Shaved off 4rem of gap */
+    padding: 4rem 3rem !important;  /* Reduced height */
+}
+.project-cta {
+    padding: 5rem 0 3rem !important; /* Reduced vertical padding */
+}
