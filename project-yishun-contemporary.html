@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contemporary Interior @ Yishun | Home with Aqilah</title>
+    <title>Yishun Contemporary | Home with Aqilah</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpeg" href="images/logo.jpg">
 </head>
-<body class="inner-page">
-    <header class="navbar scrolled" id="navbar">
+<body class="inner-page project-page">
+    <header class="navbar" id="navbar">
         <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 0.8rem;">
             <img src="images/logo.jpg" alt="Home with Aqilah" style="height: 32px; border-radius: 2px;">
             <span>HOME WITH <span class="accent">AQILAH</span></span>
@@ -22,30 +22,85 @@
         </nav>
     </header>
 
-    <main class="project-details">
-        <div class="page-header text-center">
-            <h1>Contemporary Interior</h1>
-            <p class="subtitle">Yishun Ring Road</p>
+    
+    <!-- 1. The Hero Space (The Hook) -->
+    <section class="project-hero" style="background-image: url('images/portfolio-yishun-ring-road-2-1024x754.webp');">
+        <div class="project-hero-content scroll-animate">
+            <h1 style="font-family: var(--font-heading); font-weight: 400;">Yishun Contemporary</h1>
+            <p style="font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9;">Minimalist Precision</p>
+        </div>
+    </section>
+
+    <main class="container">
+        <!-- 2. Metadata Analytics -->
+        <div class="project-meta scroll-animate delay-1">
+            <div class="meta-item">
+                <span class="meta-label">Scope</span>
+                <span class="meta-value">Full Renovation</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Style</span>
+                <span class="meta-value">Modern Minimalist</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Location</span>
+                <span class="meta-value">Yishun Ring Rd, SG</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Timeline</span>
+                <span class="meta-value">10 Weeks</span>
+            </div>
         </div>
 
-        <section class="container detail-content">
-            <div class="detail-description scroll-animate">
-                <p>Tucked away in Yishun, this five-room apartment opens up to a refined composition of clean lines and calming tones. Thoughtfully designed to balance beauty with utility, every corner exudes modern charm.</p>
+        <!-- 3. The Narrative (Brief vs Solution) -->
+        <section class="project-narrative">
+            <div class="narrative-block scroll-animate">
+                <h3>The Challenge</h3>
+                <p>A growing family required an apartment that felt radically bright, open, and serene. The original compartmentalized HDB layout was severely restricting natural airflow and limiting the penetration of afternoon sunlight.</p>
             </div>
-
-            <div class="detail-gallery">
-                <img src="images/portfolio-yishun-ring-road-2-1024x754.webp" alt="Yishun Contemporary" class="scroll-animate">
-                <img src="images/portfolio-yishun-ring-road-9-768x542.webp" alt="Yishun Contemporary" class="scroll-animate">
-                <img src="images/portfolio-yishun-ring-road-7-768x512.jpg" alt="Yishun Contemporary" class="scroll-animate">
-                <img src="images/portfolio-yishun-ring-road-6-768x491.jpg" alt="Yishun Contemporary" class="scroll-animate">
-                <img src="images/portfolio-yishun-ring-road-1-768x464.jpg" alt="Yishun Contemporary" class="scroll-animate">
+            <div class="narrative-block scroll-animate delay-1">
+                <h3>The Solution</h3>
+                <p>We aggressively opened the floorplan, utilizing a highly refined composition of clean geometric lines and bright, light-reflective materials. Every bespoke storage unit was recessed to guarantee zero visual clutter, achieving a zen-like state of modern calm.</p>
             </div>
         </section>
 
-        <div class="container text-center back-link">
-            <a href="portfolio.html" class="btn-primary" style="margin-top: 3rem; margin-bottom: 5rem;">&larr; Back to Portfolio</a>
-        </div>
+        <!-- 4. Curated Gallery -->
+        <section class="curated-gallery">
+            <div class="gallery-item scroll-animate">
+                <img src="images/portfolio-yishun-ring-road-9-768x542.webp" alt="Yishun Contemporary Image 1">
+                <p class="micro-caption">Sleek Geometric Lines</p>
+            </div>
+            <div class="gallery-item scroll-animate delay-1">
+                <img src="images/portfolio-yishun-ring-road-7-768x512.jpg" alt="Yishun Contemporary Image 2">
+                <p class="micro-caption">Recessed Custom Storage</p>
+            </div>
+            <div class="gallery-item scroll-animate">
+                <img src="images/portfolio-yishun-ring-road-6-768x491.jpg" alt="Yishun Contemporary Image 3">
+                <p class="micro-caption">Light-Reflective Finishes</p>
+            </div>
+            <div class="gallery-item scroll-animate delay-1">
+                <img src="images/portfolio-yishun-ring-road-1-768x464.jpg" alt="Yishun Contemporary Image 4">
+                <p class="micro-caption">Zen Open Concept Flow</p>
+            </div>
+        </section>
+
+        <!-- 5. Dedicated Testimonial -->
+        <section class="project-testimonial scroll-animate">
+            <p>"We are obsessed with how bright and spacious our home feels now. The attention to keeping things minimal but highly functional changed the way we live entirely."</p>
+            <span class="client-name">— Jason & Michelle</span>
+        </section>
+
+        <!-- 6. The Closing Call To Action -->
+        <section class="project-cta scroll-animate">
+            <h2>Inspired by this space?</h2>
+            <p style="font-size: 1.2rem; color: var(--color-text-light); margin-bottom: 3rem;">Let's discuss how we can bring your vision to life.</p>
+            <a href="index.html#enquire" class="btn-primary">Book a Consultation</a>
+            <div style="margin-top: 2rem;">
+                <a href="portfolio.html" style="color: var(--color-text-dark); text-decoration: underline; font-size: 0.9rem;">Or return to portfolio</a>
+            </div>
+        </section>
     </main>
+
 
                     <footer style="background-color: var(--color-bg-alt); padding: 4rem 0 2rem; border-top: 1px solid rgba(0,0,0,0.05); text-align: center;">
         <div class="container" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
