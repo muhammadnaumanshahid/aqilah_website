@@ -389,6 +389,76 @@ app.delete('/api/inquiries/:id', authenticateToken, (req, res) => {
 });
 
 
+// --- MEDIA LIBRARY API ---
+const imagesRoot = path.resolve(path.join(__dirname, 'public', 'images'));
+if (!fs.existsSync(imagesRoot)) fs.mkdirSync(imagesRoot, { recursive: true });
+
+const mediaStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let reqDir = req.body.dir || '';
+        if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+        const targetDir = path.resolve(path.join(imagesRoot, reqDir));
+        if (!targetDir.startsWith(imagesRoot)) {
+            return cb(new Error('Invalid directory'), false);
+        }
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+        cb(null, targetDir);
+    },
+    filename: (req, file, cb) => {
+        // preserve original filename but make it safe
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+        cb(null, safeName);
+    }
+});
+const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.get('/api/media', authenticateToken, (req, res) => {
+    let reqDir = req.query.dir || '';
+    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    
+    const targetDir = path.resolve(path.join(imagesRoot, reqDir));
+    if (!targetDir.startsWith(imagesRoot)) return res.status(403).json({ error: 'Forbidden' });
+    if (!fs.existsSync(targetDir)) return res.status(404).json({ error: 'Directory not found' });
+    
+    const items = fs.readdirSync(targetDir, { withFileTypes: true });
+    const folders = [];
+    const files = [];
+    
+    items.forEach(item => {
+        if (item.name.startsWith('.')) return;
+        if (item.isDirectory()) {
+            folders.push(item.name);
+        } else if (item.isFile()) {
+            const ext = path.extname(item.name).toLowerCase();
+            if (['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'].includes(ext)) {
+                files.push(item.name);
+            }
+        }
+    });
+    
+    res.json({ folders, files });
+});
+
+app.post('/api/media/folder', authenticateToken, (req, res) => {
+    let reqDir = req.body.dir || '';
+    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    const name = (req.body.name || '').replace(/[^a-zA-Z0-9_\-\ ]/g, '');
+    if (!name) return res.status(400).json({ error: 'Invalid folder name' });
+    
+    const targetDir = path.resolve(path.join(imagesRoot, reqDir, name));
+    if (!targetDir.startsWith(imagesRoot)) return res.status(403).json({ error: 'Forbidden' });
+    if (fs.existsSync(targetDir)) return res.status(400).json({ error: 'Folder already exists' });
+    
+    fs.mkdirSync(targetDir, { recursive: true });
+    res.json({ success: true });
+});
+
+app.post('/api/media/upload', authenticateToken, mediaUpload.array('files', 20), (req, res) => {
+    res.json({ success: true });
+});
+
 // --- SEO & SITEMAP ---
 app.get('/sitemap.xml', (req, res) => {
     db.all('SELECT id FROM projects ORDER BY id DESC', (err, rows) => {

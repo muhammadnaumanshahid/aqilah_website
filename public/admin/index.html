@@ -217,7 +217,13 @@
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-1">Main Image</label>
                                 <img id="main-image-preview" src="" class="h-24 w-auto object-cover rounded mb-2 hidden border">
-                                <input type="file" id="project-image" accept="image/*" class="w-full border p-2 rounded">
+                                <div class="flex gap-2">
+                                    <input type="file" id="project-image" accept="image/*" class="w-full border p-2 rounded">
+                                    <button type="button" class="bg-gray-200 px-3 py-2 rounded text-sm whitespace-nowrap hover:bg-gray-300 transition select-media-btn" data-target-existing="main_existing_image" data-target-preview="main-image-preview" data-target-file="project-image">
+                                        <i class="fas fa-folder-open"></i> Media Library
+                                    </button>
+                                </div>
+                                <input type="hidden" id="main_existing_image">
                             </div>
 
                             <hr class="my-4 border-gray-300">
@@ -357,6 +363,36 @@
         </main>
     </div>
 
-    <script src="/admin/app.js?v=2"></script>
+    <!-- Media Library Modal -->
+    <div id="media-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60]">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl p-0 max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b bg-gray-50">
+                <h3 class="text-xl font-bold">Media Library</h3>
+                <button class="close-media-modal text-gray-500 hover:text-black"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-4 border-b flex justify-between items-center bg-white flex-wrap gap-2">
+                <div class="flex items-center gap-2 overflow-x-auto text-sm font-medium" id="media-breadcrumbs">
+                    <!-- Nav injected -->
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <button id="media-new-folder-btn" class="bg-gray-200 text-gray-800 px-3 py-1.5 rounded text-sm hover:bg-gray-300">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                    <label class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 cursor-pointer mb-0">
+                        <i class="fas fa-upload"></i> Upload
+                        <input type="file" id="media-upload-input" multiple class="hidden" accept="image/*">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex-1 p-4 overflow-y-auto bg-gray-50 min-h-[300px]">
+                <div id="media-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/admin/app.js?v=3"></script>
 </body>
 </html>

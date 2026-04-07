@@ -298,9 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
         galleryManager.innerHTML = '';
         for(let i=0; i<4; i++) {
             galleryManager.innerHTML += '<div class="border p-2 rounded bg-gray-50">' +
-                '<label class="block font-medium mb-1">Image ' + (i+1) + '</label>' +
+                '<label class="block font-medium mb-1 text-xs">Image ' + (i+1) + '</label>' +
                 '<img id="gallery_preview_' + i + '" src="" class="h-16 w-auto object-cover rounded mb-2 hidden border">' +
-                '<input type="file" id="gallery_file_' + i + '" accept="image/*" class="w-full mb-2 text-xs">' +
+                '<div class="flex gap-1 mb-2">' +
+                    '<input type="file" id="gallery_file_' + i + '" accept="image/*" class="w-full text-[10px] border p-1 rounded">' +
+                    '<button type="button" class="bg-gray-200 px-2 py-1 rounded text-[10px] whitespace-nowrap hover:bg-gray-300 transition select-media-btn" data-target-existing="gallery_existing_' + i + '" data-target-preview="gallery_preview_' + i + '" data-target-file="gallery_file_' + i + '"><i class="fas fa-folder-open"></i> Media</button>' +
+                '</div>' +
                 '<input type="text" id="gallery_caption_' + i + '" placeholder="Caption ' + (i+1) + '" class="w-full border p-1 rounded text-xs">' +
                 '<input type="hidden" id="gallery_existing_' + i + '">' +
             '</div>';
@@ -311,7 +314,15 @@ document.addEventListener('DOMContentLoaded', () => {
         projectForm.reset();
         document.getElementById('project-id').value = '';
         document.getElementById('modal-title').textContent = 'Add Portfolio Item';
-        for (let i=0; i<4; i++) document.getElementById(`gallery_existing_${i}`).value = '';
+        document.getElementById('main_existing_image').value = '';
+        document.getElementById('main-image-preview').classList.add('hidden');
+        document.getElementById('main-image-preview').src = '';
+        for (let i=0; i<4; i++) {
+            document.getElementById(`gallery_existing_${i}`).value = '';
+            const gPrev = document.getElementById(`gallery_preview_${i}`);
+            gPrev.classList.add('hidden');
+            gPrev.src = '';
+        }
         projectModal.classList.remove('hidden');
     });
 
@@ -355,6 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         formData.append('content', JSON.stringify(contentJson));
         
+        
+        formData.append('existing_image', document.getElementById('main_existing_image').value);
         const fileInput = document.getElementById('project-image');
         if (fileInput.files[0]) {
             formData.append('main_image', fileInput.files[0]);
@@ -410,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('project-title').value = project.title;
         document.getElementById('project-location').value = project.location;
         document.getElementById('project-image').value = ''; 
+        document.getElementById('main_existing_image').value = project.main_image || '';
         
         const mainPrev = document.getElementById('main-image-preview');
         if (mainPrev) {
@@ -601,4 +615,149 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => msg.classList.add('hidden'), 3000);
         });
     }
+
+    // --- MEDIA LIBRARY LOGIC ---
+    const mediaModal = document.getElementById('media-modal');
+    const mediaGrid = document.getElementById('media-grid');
+    const mediaBreadcrumbs = document.getElementById('media-breadcrumbs');
+    let currentMediaPath = '';
+    let mediaTargetExisting = '';
+    let mediaTargetPreview = '';
+    let mediaTargetFile = '';
+
+    function openMediaLibrary(targetExisting, targetPreview, targetFile) {
+        mediaTargetExisting = targetExisting;
+        mediaTargetPreview = targetPreview;
+        mediaTargetFile = targetFile;
+        loadMedia(currentMediaPath);
+        mediaModal.classList.remove('hidden');
+    }
+
+    document.documentElement.addEventListener('click', e => {
+        const btn = e.target.closest('.select-media-btn');
+        if (btn) openMediaLibrary(btn.dataset.targetExisting, btn.dataset.targetPreview, btn.dataset.targetFile);
+    });
+
+    document.querySelectorAll('.close-media-modal').forEach(b => {
+        b.addEventListener('click', () => mediaModal.classList.add('hidden'));
+    });
+
+    async function loadMedia(pathStr) {
+        currentMediaPath = pathStr;
+        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}`);
+        const data = await res.json();
+        
+        // Render Breadcrumbs
+        const parts = pathStr.split('/').filter(p => p);
+        let breadHtml = `<button class="text-blue-500 hover:underline media-crumb" data-path="">Home</button>`;
+        let runningPath = '';
+        parts.forEach(p => {
+            runningPath += (runningPath ? '/' : '') + p;
+            breadHtml += ` / <button class="text-blue-500 hover:underline media-crumb" data-path="${runningPath}">${p}</button>`;
+        });
+        mediaBreadcrumbs.innerHTML = breadHtml;
+
+        document.querySelectorAll('.media-crumb').forEach(b => {
+            b.addEventListener('click', (e) => loadMedia(e.target.dataset.path));
+        });
+
+        // Render Grid
+        let gridHtml = '';
+        data.folders.forEach(f => {
+            const fPath = pathStr ? `${pathStr}/${f}` : f;
+            gridHtml += `
+                <div class="bg-white border rounded p-3 text-center cursor-pointer hover:shadow hover:border-blue-300 transition media-folder" data-path="${fPath}">
+                    <i class="fas fa-folder text-4xl text-yellow-500 mb-2"></i>
+                    <p class="text-xs truncate font-medium text-gray-700">${f}</p>
+                </div>`;
+        });
+        
+        data.files.forEach(f => {
+            const fPath = pathStr ? `${pathStr}/${f}` : f;
+            const fullUrl = '/images/' + fPath;
+            gridHtml += `
+                <div class="bg-white border rounded p-2 text-center cursor-pointer hover:shadow hover:border-blue-500 transition media-file relative group" data-url="${fullUrl}">
+                    <div class="h-24 w-full bg-gray-100 flex items-center justify-center rounded overflow-hidden mb-2">
+                        <img src="${fullUrl}" class="max-h-full max-w-full object-cover">
+                    </div>
+                    <p class="text-[10px] truncate text-gray-600">${f}</p>
+                    <div class="absolute inset-0 bg-blue-500 bg-opacity-80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center rounded transition font-medium text-sm">
+                        Select
+                    </div>
+                </div>`;
+        });
+        
+        if(data.folders.length === 0 && data.files.length === 0) {
+           gridHtml = `<div class="col-span-full text-center py-10 text-gray-400">Empty directory</div>`;
+        }
+        
+        mediaGrid.innerHTML = gridHtml;
+        
+        document.querySelectorAll('.media-folder').forEach(el => {
+            el.addEventListener('click', () => loadMedia(el.dataset.path));
+        });
+
+        document.querySelectorAll('.media-file').forEach(el => {
+            el.addEventListener('click', () => {
+                const url = el.dataset.url;
+                
+                const existingInput = document.getElementById(mediaTargetExisting);
+                const previewImg = document.getElementById(mediaTargetPreview);
+                const fileInput = document.getElementById(mediaTargetFile);
+                
+                if (existingInput) existingInput.value = url;
+                if (previewImg) { previewImg.src = url; previewImg.classList.remove('hidden'); }
+                if (fileInput) fileInput.value = ''; // clear local file if server file selected
+                
+                mediaModal.classList.add('hidden');
+            });
+        });
+    }
+
+    document.getElementById('media-new-folder-btn')?.addEventListener('click', async () => {
+        const name = prompt('Enter new folder name:');
+        if (!name) return;
+        const res = await _fetch('/api/media/folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dir: currentMediaPath, name })
+        });
+        if (res.ok) loadMedia(currentMediaPath);
+        else alert('Error creating folder');
+    });
+
+    document.getElementById('media-upload-input')?.addEventListener('change', async (e) => {
+        if (!e.target.files.length) return;
+        const fm = new FormData();
+        fm.append('dir', currentMediaPath);
+        for(let f of e.target.files) fm.append('files', f);
+        
+        const res = await _fetch('/api/media/upload', { method: 'POST', body: fm });
+        e.target.value = '';
+        if (res.ok) loadMedia(currentMediaPath);
+        else alert('Error uploading files');
+    });
+
+    // Clear existing server file input if a local file is picked
+    document.documentElement.addEventListener('change', e => {
+        if (e.target.type === 'file' && e.target.id.includes('project-image')) {
+            document.getElementById('main_existing_image').value = '';
+            if (e.target.files[0]) {
+                const url = URL.createObjectURL(e.target.files[0]);
+                const prev = document.getElementById('main-image-preview');
+                prev.src = url; prev.classList.remove('hidden');
+            }
+        }
+        if (e.target.type === 'file' && e.target.id.includes('gallery_file_')) {
+            const idx = e.target.id.split('_')[2];
+            document.getElementById(`gallery_existing_${idx}`).value = '';
+            if (e.target.files[0]) {
+                const url = URL.createObjectURL(e.target.files[0]);
+                const prev = document.getElementById(`gallery_preview_${idx}`);
+                prev.src = url; prev.classList.remove('hidden');
+            }
+        }
+    });
+
 });
+
