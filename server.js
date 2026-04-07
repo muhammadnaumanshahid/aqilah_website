@@ -362,6 +362,41 @@ app.delete('/api/inquiries/:id', authenticateToken, (req, res) => {
 });
 
 
+// --- SEO & SITEMAP ---
+app.get('/sitemap.xml', (req, res) => {
+    db.all('SELECT id FROM projects ORDER BY id DESC', (err, rows) => {
+        if (err) return res.status(500).end();
+        
+        const baseUrl = 'https://homewithaqilah.com';
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>${baseUrl}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>${baseUrl}/portfolio.html</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>`;
+
+        rows.forEach(p => {
+            xml += `
+    <url>
+        <loc>${baseUrl}/project.html?id=${p.id}</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>`;
+        });
+        
+        xml += '\n</urlset>';
+        
+        res.header('Content-Type', 'application/xml');
+        res.send(xml);
+    });
+});
+
 // Catch-all route to serve the SPA Admin if it gets requested directly
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
