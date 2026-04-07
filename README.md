@@ -1,38 +1,81 @@
-# Home with Aqilah | Premium Interior Design Portfolio
+# Home with Aqilah - Full Stack Architecture
 
-Welcome to the **Home with Aqilah** website repository! This is a lightning-fast, highly responsive, and conversion-optimized digital portfolio built for an interior design practice.
+![Home with Aqilah](public/images/logo.jpg)
 
-## 🌟 Overview
-Built with pure HTML, CSS, and vanilla JavaScript, this project bypasses heavy CMS constraints to deliver incredibly fast load times and a deeply tactile user experience. It's designed to act as a **trust engine**—funneling prospective clients from browsing stunning project galleries directly into a consultation waitlist.
+**Home with Aqilah** has been modernized from a static template into a fully dynamic, secure, and data-driven full-stack application. It features a custom CMS for portfolio management, an interactive JWT-secured Admin Dashboard, and a GDPR-compliant passive analytical tracking engine.
 
-## ✨ Features
-- **Immersive Mobile Menu:** A glassmorphism full-screen overlay for elegant mobile navigation.
-- **Conversion Drivers:** A sticky floating action button (FAB) that locks the "Book Consultation" action in the user's peripheral vision.
-- **Intersection Animation:** Scroll-based dynamic elements that gently reveal themselves to craft a tactile storytelling experience.
-- **Secure Form Routing:** Native integration with Formspree (utilizing hidden honeypot logic to automatically terminate bot spam).
-- **Extreme Responsiveness:** Fully fluid layouts scaling from 4K ultra-wide monitors down to 320px mobile screens without breaking.
+## 🚀 Tech Stack
 
-## 🚀 How to Run Locally
-Because this project utilizes pure web standards, no heavy dependencies are required. 
+**Frontend Interface:**
+- **HTML5 & CSS3** (Custom Minimalist Styling, responsive Grid/Flex modules)
+- **Vanilla JavaScript** (ES6+, DOM Intersection Observers, Fetch API polling)
 
-1. Clone the repository: `git clone https://github.com/muhammadnaumanshahid/aqilah_website.git`
-2. Navigate to the project folder: `cd aqilah_website`
-3. Spin up a local Python server: 
-   ```bash
-   python3 -m http.server 8042
-   ```
-4. Open your browser and go to `http://localhost:8042`.
-
-## 🛠️ Adding New Projects
-To expand the portfolio, follow the simple copy-paste protocol:
-1. Place new high-resolution images into the `/images` directory.
-2. Duplicate an existing HTML project file (e.g., `project-duxton.html`) and rename it (`project-[new-name].html`).
-3. Update the `<title>`, heading, and `<img src="...">` tags inside your new file.
-4. Link your new HTML file in `portfolio.html`!
-
-## 🔐 Security & Optimization
-- **Reverse-Tabnabbing Protected:** All external and social media targets utilize `rel="noopener noreferrer"`.
-- **A11y (Accessibility):** All interactive inputs and anchors possess keyboard-supported `:focus-visible` styling for inclusive navigation.
+**Backend Architecture:**
+- **Server:** Node.js powered by Express.js
+- **Database:** SQLite3 (`database.sqlite`) for relational storage
+- **Security Pipeline:** `helmet` (HTTP header fortification), `express-rate-limit` (brute-force defense), `bcryptjs` (password hashing), and strictly-typed `multer` (MIME image verification).
+- **Authentication:** Stateless authentication via `jsonwebtoken`.
 
 ---
-*(c) 2026 Home with Aqilah. All rights reserved.*
+
+## ✨ System Features
+
+### 1. Dynamic Portfolio Engine
+Projects and interior design portfolios are no longer hardcoded. The application programmatically draws layout structures, challenge/solution narratives, and curated image galleries directly from the SQLite database.
+
+### 2. Multi-User Admin Dashboard (`/admin`)
+Authorized users can log in dynamically to modify the website directly:
+- **Project Editor:** An interactive UI allowing complete CRUD capabilities over the portfolio, backed by realtime image-preview rendering.
+- **Inquiry Capture:** A centralized hub to catch, review, and act upon email form submissions.
+
+### 3. Invisible Analytics System
+Custom telemetry pinging allows the server to secretly record:
+- Total unique visitors mapped via secure Visitor ID tokens.
+- Total average duration of sessions via continuous `fetch(keepalive)` beacons.
+- Geolocation tracking by isolating public IP traces.
+
+---
+
+## 🛠️ Local Development & Setup
+
+1. **Clone the Repository:**
+```bash
+git clone https://github.com/yourusername/aqilah_website.git
+cd aqilah_website
+```
+
+2. **Establish the Environment:**
+Create a `.env` file in the core root directory containing:
+```env
+PORT=8080
+JWT_SECRET=your_super_secret_unique_string_here
+```
+
+3. **Install Dependencies:**
+```bash
+# This will pull Express, Helmet, SQLite3, Bcrypt, Multer, etc.
+npm install
+```
+
+4. **Launch the Server:**
+```bash
+node server.js
+```
+*The website will seamlessly initialize on `http://localhost:8080`.*
+
+---
+
+## 🌐 Production Deployment (cPanel / Shared Hosting)
+
+1. Package all files into a `.zip` **(Excluding `node_modules` and `.git`)**.
+2. Upload and extract via the cPanel File Manager.
+3. Access **Setup Node.js App** through your cPanel dashboard.
+4. Set the **Application startup file** to `server.js` and add your `JWT_SECRET` variable.
+5. Click **Run NPM Install**, followed by **Start App**.
+
+*Note: Shared Hosts running Phusion Passenger will dynamically wire the internal `PORT` variable. You do not need an Nginx configuration.*
+
+---
+
+### Author
+Designed and Engineered specifically for **Home with Aqilah's** premium stylistic and architectural brand intent.
