@@ -98,6 +98,12 @@ app.get('/api/settings', authenticateToken, (req, res) => {
     });
 });
 
+app.get('/api/public/analytics', (req, res) => {
+    db.get("SELECT value FROM settings WHERE key = 'ga_tracking_id'", (err, row) => {
+        res.json({ tracking_id: row ? row.value : '' });
+    });
+});
+
 app.put('/api/settings', authenticateToken, (req, res) => {
     const updates = req.body;
     const stmt = db.prepare('UPDATE settings SET value = ? WHERE key = ?');

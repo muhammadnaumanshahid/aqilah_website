@@ -241,3 +241,20 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Could not fetch projects:", err));
     }
 });
+
+function injectAnalytics() {
+    fetch('/api/public/analytics').then(r => r.json()).then(data => {
+        if (data.tracking_id && data.tracking_id.trim() !== '') {
+            const script1 = document.createElement('script');
+            script1.async = true;
+            script1.src = `https://www.googletagmanager.com/gtag/js?id=${data.tracking_id}`;
+            document.head.appendChild(script1);
+            
+            const script2 = document.createElement('script');
+            script2.innerHTML = `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${data.tracking_id}');`;
+            document.head.appendChild(script2);
+            console.log("Analytics engine active.");
+        }
+    }).catch(e => {});
+}
+injectAnalytics();

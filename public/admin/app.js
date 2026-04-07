@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSettings() {
         const res = await _fetch('/api/settings');
         const settings = await res.json();
-        const fields = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'recipient_email'];
+        const fields = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'recipient_email', 'ga_tracking_id'];
         fields.forEach(f => {
             const el = document.getElementById(`setting_${f}`);
             if (el && settings[f]) {
@@ -581,4 +581,24 @@ document.addEventListener('DOMContentLoaded', () => {
         msg.classList.remove('hidden');
         setTimeout(() => msg.classList.add('hidden'), 3000);
     });
+
+    const integrationsForm = document.getElementById('integrations-form');
+    if (integrationsForm) {
+        integrationsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updates = {
+                ga_tracking_id: document.getElementById('setting_ga_tracking_id').value
+            };
+
+            await _fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            
+            const msg = document.getElementById('integrations-message');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+        });
+    }
 });

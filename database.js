@@ -87,6 +87,12 @@ db.serialize(() => {
             console.log("Default SMTP settings initialized.");
         }
     });
+
+    db.get("SELECT value FROM settings WHERE key = 'ga_tracking_id'", (err, row) => {
+        if (!row) {
+            db.run("INSERT INTO settings (key, value) VALUES ('ga_tracking_id', '')");
+        }
+    });
 });
 
 module.exports = db;
