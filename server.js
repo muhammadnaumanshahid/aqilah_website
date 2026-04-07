@@ -1,3 +1,5 @@
+module.paths.push('/home3/homewith/homewithaqilah_app/node_modules');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -10,9 +12,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const db = require('./database');
 const crypto = require('crypto');
+const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // Dynamic Safe JWT Secret
 let JWT_SECRET = process.env.JWT_SECRET;
