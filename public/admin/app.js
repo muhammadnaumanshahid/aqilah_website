@@ -757,7 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 prev.src = url; prev.classList.remove('hidden');
             }
         }
-        }
     });
 
     // --- IDLE LOGOUT LOGIC ---
