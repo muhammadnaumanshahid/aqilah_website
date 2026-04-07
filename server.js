@@ -9,10 +9,22 @@ const nodemailer = require('nodemailer');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const db = require('./database');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const JWT_SECRET = process.env.JWT_SECRET || 'very_secret_key_123';
+
+// Dynamic Safe JWT Secret
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    const secretPath = path.join(__dirname, '.jwt_secret');
+    if (fs.existsSync(secretPath)) {
+        JWT_SECRET = fs.readFileSync(secretPath, 'utf8').trim();
+    } else {
+        JWT_SECRET = crypto.randomBytes(64).toString('hex');
+        fs.writeFileSync(secretPath, JWT_SECRET, { mode: 0o600 });
+    }
+}
 
 // Security Headers & Rates
 app.use(helmet({ 
@@ -50,7 +62,11 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Invalid file type: Images only.'), false);
     }
 };
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+
+const escapeHTML = str => str ? String(str).replace(/[&<>'"]/g, 
+    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+) : '';
 
 // Middleware
 app.use(cors());
@@ -298,7 +314,12 @@ app.get('/api/inquiries', authenticateToken, (req, res) => {
 });
 
 app.post('/api/inquiries', async (req, res) => {
-    const { name, email, phone, property_type, budget, timeline } = req.body;
+    const name = escapeHTML(req.body.name);
+    const email = escapeHTML(req.body.email);
+    const phone = escapeHTML(req.body.phone);
+    const property_type = escapeHTML(req.body.property_type);
+    const budget = escapeHTML(req.body.budget);
+    const timeline = escapeHTML(req.body.timeline);
     
     // Save to DB
     db.run('INSERT INTO inquiries (name, email, phone, property_type, budget, timeline) VALUES (?, ?, ?, ?, ?, ?)',
