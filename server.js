@@ -62,10 +62,10 @@ const fileFilter = (req, file, cb) => {
     if (allowed.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type: Images only.'), false);
+        cb(new Error('INVALID_TYPE'), false);
     }
 };
-const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
 const escapeHTML = str => str ? String(str).replace(/[&<>'"]/g, 
     tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
@@ -420,7 +420,7 @@ const mediaStorage = multer.diskStorage({
         cb(null, safeName);
     }
 });
-const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
 app.get('/api/media', authenticateToken, (req, res) => {
     let reqDir = req.query.dir || '';
@@ -463,8 +463,15 @@ app.post('/api/media/folder', authenticateToken, (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/api/media/upload', authenticateToken, mediaUpload.array('files', 20), (req, res) => {
-    res.json({ success: true });
+app.post('/api/media/upload', authenticateToken, (req, res) => {
+    mediaUpload.array('files', 20)(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'File too large (Max 50MB)' : err.message });
+        } else if (err) {
+            return res.status(400).json({ error: err.message === 'INVALID_TYPE' ? 'Images only allowed' : 'Unknown upload error' });
+        }
+        res.json({ success: true });
+    });
 });
 
 // --- SEO & SITEMAP ---

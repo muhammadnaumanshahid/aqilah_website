@@ -693,11 +693,20 @@ document.addEventListener('DOMContentLoaded', () => {
         
         mediaGrid.innerHTML = gridHtml;
         
+        const pathDisplay = document.getElementById('media-path-display');
+        const defaultPath = currentMediaPath ? `/images/${currentMediaPath}` : '/images';
+        if (pathDisplay) pathDisplay.textContent = defaultPath;
+        
         document.querySelectorAll('.media-folder').forEach(el => {
             el.addEventListener('click', () => loadMedia(el.dataset.path));
+            el.addEventListener('mouseenter', () => { if(pathDisplay) pathDisplay.textContent = `/images/${el.dataset.path}`; });
+            el.addEventListener('mouseleave', () => { if(pathDisplay) pathDisplay.textContent = defaultPath; });
         });
 
         document.querySelectorAll('.media-file').forEach(el => {
+            el.addEventListener('mouseenter', () => { if(pathDisplay) pathDisplay.textContent = el.dataset.url; });
+            el.addEventListener('mouseleave', () => { if(pathDisplay) pathDisplay.textContent = defaultPath; });
+            
             el.addEventListener('click', () => {
                 const url = el.dataset.url;
                 
@@ -734,8 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const res = await _fetch('/api/media/upload', { method: 'POST', body: fm });
         e.target.value = '';
-        if (res.ok) loadMedia(currentMediaPath);
-        else alert('Error uploading files');
+        if (res.ok) {
+            loadMedia(currentMediaPath);
+        } else {
+            const errBody = await res.json();
+            alert('Upload error: ' + (errBody.error || 'Server rejected file'));
+        }
     });
 
     // Clear existing server file input if a local file is picked
