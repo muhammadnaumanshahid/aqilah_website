@@ -77,6 +77,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Explicit root route for LiteSpeed/Passenger environments
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.use('/api/login', apiLimiter);
 app.use('/api/inquiries', apiLimiter);
 
