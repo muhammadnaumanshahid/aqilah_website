@@ -15,7 +15,10 @@ const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'very_secret_key_123';
 
 // Security Headers & Rates
-app.use(helmet({ contentSecurityPolicy: false })); // disable CSP for inline scripts
+app.use(helmet({ 
+    contentSecurityPolicy: false,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
