@@ -216,8 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(projects => {
                 if (projects && projects.length > 0) {
+                    let displayProjects = projects;
+                    if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+                        displayProjects = projects.slice(0, 4);
+                    }
+                    
                     gallery.innerHTML = ''; // clear static projects
-                    projects.forEach((p, idx) => {
+                    displayProjects.forEach((p, idx) => {
                         const delayClass = idx % 2 === 1 ? 'delay-1' : '';
                         gallery.innerHTML += `
                             <a href="project.html?id=${p.id}" class="project-item scroll-animate ${delayClass} visible">
