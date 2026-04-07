@@ -757,7 +757,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 prev.src = url; prev.classList.remove('hidden');
             }
         }
+        }
     });
 
-});
+    // --- IDLE LOGOUT LOGIC ---
+    let idleTimeout;
+    const IDLE_DURATION = 30 * 60 * 1000; // 30 minutes
 
+    function resetIdleTimer() {
+        if (!token) return;
+        clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(() => {
+            if (token) {
+                alert("You have been automatically logged out due to inactivity.");
+                logoutBtn.click();
+            }
+        }, IDLE_DURATION);
+    }
+
+    // Attach activity listeners
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+        window.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+
+    // Initialize the timer
+    resetIdleTimer();
+
+});
