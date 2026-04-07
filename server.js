@@ -41,16 +41,16 @@ const apiLimiter = rateLimit({
     message: { error: 'Too many requests. Please try again later.' }
 });
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+// Ensure images directory exists
+const imagesRoot = path.join(__dirname, 'public', 'images');
+if (!fs.existsSync(imagesRoot)) {
+    fs.mkdirSync(imagesRoot, { recursive: true });
 }
 
-// Multer Config for Images
+// Multer Config for General Project Uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadsDir);
+        cb(null, imagesRoot); // Uploads directly to public/images
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -398,8 +398,6 @@ app.delete('/api/inquiries/:id', authenticateToken, (req, res) => {
 
 
 // --- MEDIA LIBRARY API ---
-const imagesRoot = path.resolve(path.join(__dirname, 'public', 'images'));
-if (!fs.existsSync(imagesRoot)) fs.mkdirSync(imagesRoot, { recursive: true });
 
 const mediaStorage = multer.diskStorage({
     destination: (req, file, cb) => {
