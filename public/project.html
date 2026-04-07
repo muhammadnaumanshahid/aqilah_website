@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details | Home with Aqilah</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="images/logo.jpg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .project-hero {
+            height: 60vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            margin-top: 80px;
+        }
+        .project-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+        }
+        .project-hero h1 { position: relative; z-index: 10; font-size: 3rem; margin-bottom: 0.5rem; }
+        .project-hero p { position: relative; z-index: 10; font-size: 1.25rem; font-family: 'Outfit', sans-serif;}
+        
+        .project-details { padding: 4rem 2rem; max-width: 56rem; margin: 0 auto; }
+        .project-details p { font-family: 'Outfit', sans-serif; font-size: 1.1rem; line-height: 1.8; color: #444; margin-bottom: 1.5rem; }
+        .project-details h2, .project-details h3 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin-top: 2rem; margin-bottom: 1rem; }
+        
+        /* Utility */
+        .loading { text-align: center; padding: 5rem; font-size: 1.2rem; font-family: 'Outfit', sans-serif;}
+    </style>
+</head>
+<body>
+    <header class="navbar" id="navbar">
+        <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 0.8rem;">
+            <img src="images/logo.jpg" alt="Home with Aqilah" style="height: 32px; border-radius: 2px;">
+            <span>HOME WITH <span class="accent">AQILAH</span></span>
+        </a>
+        <nav>
+            <a href="index.html#about">About</a>
+            <a href="index.html#services">Services</a>
+            <a href="portfolio.html">Portfolio</a>
+            <a href="index.html#enquire" class="btn-primary">Enquire</a>
+        </nav>
+        <div class="mobile-menu-btn" id="mobile-menu-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </header>
+
+    <main id="dynamic-project-container">
+        <div class="loading">Loading project details...</div>
+    </main>
+
+    <footer style="background-color: var(--color-bg-alt); padding: 4rem 0 2rem; border-top: 1px solid rgba(0,0,0,0.05); text-align: center;">
+        <div class="container text-center">
+            <p style="font-size: 0.85rem; color: var(--color-text-light); margin: 0;">&copy; 2026 Home with Aqilah. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const container = document.getElementById('dynamic-project-container');
+            
+            if (!id) {
+                container.innerHTML = '<div class="loading">Project not found.</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/projects/${id}`);
+                if (!res.ok) throw new Error('Not found');
+                const p = await res.json();
+                
+                if(p) {
+                    document.title = p.title + " | Home with Aqilah";
+                    const app = document.getElementById('dynamic-project-container');
+                    
+                    let c = {};
+                    let isJson = false;
+                    try { 
+                        c = JSON.parse(p.content); 
+                        isJson = true; 
+                    } catch(e) {}
+                    
+                    let contentHtml = '';
+                    if (isJson) {
+                        contentHtml = `
+                            <div class="project-meta scroll-animate delay-1">
+                                <div class="meta-item"><span class="meta-label">Scope</span><span class="meta-value">${c.scope || '-'}</span></div>
+                                <div class="meta-item"><span class="meta-label">Style</span><span class="meta-value">${c.style || '-'}</span></div>
+                                <div class="meta-item"><span class="meta-label">Location</span><span class="meta-value">${p.location || '-'}</span></div>
+                                <div class="meta-item"><span class="meta-label">Timeline</span><span class="meta-value">${c.timeline || '-'}</span></div>
+                            </div>
+
+                            <section class="project-narrative">
+                                <div class="narrative-block scroll-animate">
+                                    <h3>The Challenge</h3>
+                                    <p>${c.challenge || ''}</p>
+                                </div>
+                                <div class="narrative-block scroll-animate delay-1">
+                                    <h3>The Solution</h3>
+                                    <p>${c.solution || ''}</p>
+                                </div>
+                            </section>
+
+                            <section class="curated-gallery">
+                                ${(c.gallery || []).filter(g => g.image).map((g, idx) => `
+                                    <div class="gallery-item scroll-animate ${idx % 2 === 1 ? 'delay-1' : ''}">
+                                        <img src="${g.image}" alt="Gallery Image">
+                                        ${g.caption ? `<p class="micro-caption">${g.caption}</p>` : ''}
+                                    </div>
+                                `).join('')}
+                            </section>
+
+                            ${c.testimonial && c.testimonial.quote ? `
+                            <section class="project-testimonial scroll-animate">
+                                <p>"${c.testimonial.quote}"</p>
+                                <span class="client-name">— ${c.testimonial.client}</span>
+                            </section>` : ''}
+
+                            <section class="project-cta scroll-animate">
+                                <h2>Inspired by this space?</h2>
+                                <p style="font-size: 1.2rem; color: var(--color-text-light); margin-bottom: 3rem;">Let's discuss how we can bring your vision to life.</p>
+                                <a href="index.html#enquire" class="btn-primary">Book a Consultation</a>
+                                <div style="margin-top: 2rem;">
+                                    <a href="portfolio.html" style="color: var(--color-text-dark); text-decoration: underline; font-size: 0.9rem;">Or return to portfolio</a>
+                                </div>
+                            </section>
+                        `;
+                    } else {
+                        contentHtml = p.content; // fallback for raw HTML
+                    }
+
+                    app.innerHTML = `
+                        <section class="project-hero fade-in" style="background-image: url('${p.main_image}');">
+                            <div class="project-hero-content">
+                                <h1>${p.title}</h1>
+                                <p>${p.location}</p>
+                            </div>
+                        </section>
+                        <main class="container">
+                            <a href="portfolio.html" style="color: #444; text-decoration: underline; font-size:0.9rem; margin-bottom: 2rem; display:inline-block;">&larr; Back to Portfolio</a>
+                            ${contentHtml}
+                        </main>
+                    `;
+                    
+                    setTimeout(() => {
+                        document.querySelectorAll('.scroll-animate, .fade-in').forEach(el => el.classList.add('visible'));
+                    }, 50);
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="loading">Project not found or an error occurred.</div>';
+            }
+        });
+    </script>
+</body>
+</html>

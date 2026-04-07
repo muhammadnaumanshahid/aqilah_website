@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aqilah Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f3f4f6; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="flex-1 flex items-center justify-center bg-gray-900 absolute inset-0 z-50">
+        <div class="bg-white p-10 rounded-lg shadow-xl w-96 max-w-full">
+            <div class="text-center mb-8">
+                <img src="/images/logo.jpg" alt="Logo" class="h-16 mx-auto mb-4 rounded">
+                <h1 class="text-2xl font-semibold">Admin Login</h1>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="login-username" class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="login-password" class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition">Sign In</button>
+                <div id="login-error" class="text-red-500 text-sm mt-3 text-center hidden">Invalid credentials</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboard-screen" class="flex-1 flex h-full hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-white flex flex-col h-full">
+            <div class="mb-8 p-6">
+                <img src="/images/logo.jpg" class="w-32 mx-auto rounded">
+                <h1 class="text-center text-xl font-bold mt-4 tracking-wider">AQILAH ADMIN</h1>
+            </div>
+            
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="#overview" class="nav-link block px-4 py-3 rounded bg-gray-800 text-white transition" data-target="overview-view">
+                    <i class="fas fa-home w-6"></i> Overview
+                </a>
+                <a href="#users" class="nav-link block px-4 py-3 rounded hover:bg-gray-800 text-gray-300 hover:text-white transition" data-target="users-view">
+                    <i class="fas fa-users w-6"></i> Team
+                </a>
+                <a href="#projects" class="nav-link block px-4 py-3 rounded hover:bg-gray-800 text-gray-300 hover:text-white transition" data-target="projects-view">
+                    <i class="fas fa-images w-6"></i> Portfolio
+                </a>
+                <a href="#inquiries" class="nav-link block px-4 py-3 rounded hover:bg-gray-800 text-gray-300 hover:text-white transition" data-target="inquiries-view">
+                    <i class="fas fa-envelope w-6"></i> Inquiries
+                </a>
+                <a href="#settings" class="nav-link block px-4 py-3 rounded hover:bg-gray-800 text-gray-300 hover:text-white transition" data-target="settings-view">
+                    <i class="fas fa-cog w-6"></i> Settings
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="flex-1 p-10 bg-gray-50 h-screen overflow-y-auto hidden">
+            
+            <div class="flex justify-between items-center mb-8 pb-4 border-b">
+                <h2 class="text-2xl font-light text-gray-600">Welcome back, <span id="welcome-name" class="font-medium text-black">Admin</span>!</h2>
+                <button id="logout-btn" class="text-gray-500 hover:text-black transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                </button>
+            </div>
+
+            <!-- OVERVIEW VIEW -->
+            <div id="overview-view" class="view-section">
+                <h2 class="text-3xl font-semibold mb-6">Overview</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center">
+                        <div class="bg-blue-100 p-3 rounded text-blue-600 mr-3"><i class="fas fa-images"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-widest">Portfolio</p>
+                            <h3 class="text-xl font-bold" id="overview-projects-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center">
+                        <div class="bg-green-100 p-3 rounded text-green-600 mr-3"><i class="fas fa-envelope"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-widest">Inquiries</p>
+                            <h3 class="text-xl font-bold" id="overview-inquiries-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center">
+                        <div class="bg-purple-100 p-3 rounded text-purple-600 mr-3"><i class="fas fa-users"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-widest">Unique Vis</p>
+                            <h3 class="text-xl font-bold" id="metric-visitors">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center">
+                        <div class="bg-yellow-100 p-3 rounded text-yellow-600 mr-3"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-widest">Avg Time</p>
+                            <h3 class="text-xl font-bold" id="metric-duration">0s</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center">
+                        <div class="bg-red-100 p-3 rounded text-red-600 mr-3"><i class="fas fa-globe"></i></div>
+                        <div>
+                            <p class="text-sm text-gray-500 uppercase tracking-widest">Top Geo</p>
+                            <h3 class="text-lg font-bold truncate w-24" id="metric-location">-</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div class="col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-xl font-medium mb-4">Inquiries Overview (Last 7 Days)</h3>
+                        <canvas id="inquiries-chart" height="80"></canvas>
+                    </div>
+                    <div class="col-span-1 bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center">
+                        <h3 class="text-xl font-medium mb-4">Inquiries by Property Type</h3>
+                        <div class="w-full flex-1 relative flex justify-center items-center">
+                            <canvas id="property-type-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM VIEW -->
+            <div id="users-view" class="view-section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-semibold">Team Management</h2>
+                    <button id="add-user-btn" class="bg-black text-white px-4 py-2 rounded shadow hover:bg-gray-800 transition">
+                        <i class="fas fa-user-plus mr-2"></i> Add Team Member
+                    </button>
+                </div>
+                
+                <!-- User Form Modal -->
+                <div id="user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="user-modal-title" class="text-xl font-bold">Add Team Member</h3>
+                            <button class="close-user-modal text-gray-500 hover:text-black"><i class="fas fa-times text-xl"></i></button>
+                        </div>
+                        <form id="user-form">
+                            <input type="hidden" id="user-id">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Full Name</label>
+                                <input type="text" id="user-name" class="w-full border p-2 rounded" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Email Address</label>
+                                <input type="email" id="user-email" class="w-full border p-2 rounded" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Password</label>
+                                <input type="password" id="user-password" class="w-full border p-2 rounded">
+                                <p class="text-xs text-gray-500 mt-1" id="user-pass-help">Leave blank to keep existing password.</p>
+                            </div>
+                            <div class="flex justify-end gap-3 mt-6">
+                                <button type="button" class="close-user-modal px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-black text-white rounded hover:bg-gray-800">Save Member</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                                <th class="p-4 font-semibold text-sm">Name</th>
+                                <th class="p-4 font-semibold text-sm">Email</th>
+                                <th class="p-4 font-semibold text-sm text-right w-32">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="text-sm">
+                            <!-- JS injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PROJECTS VIEW -->
+            <div id="projects-view" class="view-section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-semibold">Manage Portfolio</h2>
+                    <button id="add-project-btn" class="bg-black text-white px-4 py-2 rounded shadow hover:bg-gray-800 transition">
+                        <i class="fas fa-plus mr-2"></i> Add to Portfolio
+                    </button>
+                </div>
+                <!-- Project Form Modal (Hidden by default) -->
+                <div id="project-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-screen overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="modal-title" class="text-xl font-bold">Add Portfolio Item</h3>
+                            <button class="close-modal-btn text-gray-500 hover:text-black"><i class="fas fa-times text-xl"></i></button>
+                        </div>
+                        <form id="project-form">
+                            <input type="hidden" id="project-id">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Title</label>
+                                    <input type="text" id="project-title" class="w-full border p-2 rounded" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Location / Tagline</label>
+                                    <input type="text" id="project-location" class="w-full border p-2 rounded">
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Main Image</label>
+                                <img id="main-image-preview" src="" class="h-24 w-auto object-cover rounded mb-2 hidden border">
+                                <input type="file" id="project-image" accept="image/*" class="w-full border p-2 rounded">
+                            </div>
+
+                            <hr class="my-4 border-gray-300">
+                            <h4 class="font-semibold mb-2">Metadata</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div><label class="block text-sm font-medium mb-1">Scope</label><input type="text" id="meta-scope" class="w-full border p-2 rounded" placeholder="e.g. Full Renovation"></div>
+                                <div><label class="block text-sm font-medium mb-1">Style</label><input type="text" id="meta-style" class="w-full border p-2 rounded" placeholder="e.g. Contemporary"></div>
+                                <div><label class="block text-sm font-medium mb-1">Timeline</label><input type="text" id="meta-timeline" class="w-full border p-2 rounded" placeholder="e.g. 12 Weeks"></div>
+                            </div>
+
+                            <hr class="my-4 border-gray-300">
+                            <h4 class="font-semibold mb-2">Narrative</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div><label class="block text-sm font-medium mb-1">The Challenge</label><textarea id="narrative-challenge" rows="3" class="w-full border p-2 rounded"></textarea></div>
+                                <div><label class="block text-sm font-medium mb-1">The Solution</label><textarea id="narrative-solution" rows="3" class="w-full border p-2 rounded"></textarea></div>
+                            </div>
+
+                            <hr class="my-4 border-gray-300">
+                            <h4 class="font-semibold mb-2">Testimonial</h4>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Client Quote</label>
+                                <textarea id="testi-quote" rows="2" class="w-full border p-2 rounded"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Client Name</label>
+                                <input type="text" id="testi-name" class="w-full border p-2 rounded" placeholder="e.g. Ryan & Sarah">
+                            </div>
+
+                            <hr class="my-4 border-gray-300">
+                            <h4 class="font-semibold mb-2">Gallery (Up to 4 Images)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm" id="gallery-manager">
+                                <!-- JS will inject 4 rows -->
+                            </div>
+                            <div class="flex justify-end gap-3 mt-6">
+                                <button type="button" class="close-modal-btn px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-black text-white rounded hover:bg-gray-800">Save Item</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Projects Table -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="p-4 font-semibold text-sm w-16">Image</th>
+                                <th class="p-4 font-semibold text-sm">Title</th>
+                                <th class="p-4 font-semibold text-sm">Location</th>
+                                <th class="p-4 font-semibold text-sm text-right w-32">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- INQUIRIES VIEW -->
+            <div id="inquiries-view" class="view-section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-semibold">Inquiries</h2>
+                    <button id="export-csv-btn" class="bg-gray-800 text-white px-4 py-2 rounded shadow hover:bg-gray-700 transition">
+                        <i class="fas fa-file-csv mr-2"></i> Export to CSV
+                    </button>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="p-4 font-semibold text-sm">Date</th>
+                                <th class="p-4 font-semibold text-sm">Client</th>
+                                <th class="p-4 font-semibold text-sm">Contact</th>
+                                <th class="p-4 font-semibold text-sm">Status</th>
+                                <th class="p-4 font-semibold text-sm text-right w-32">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inquiries-table-body" class="text-sm">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SETTINGS VIEW -->
+            <div id="settings-view" class="view-section hidden">
+                <h2 class="text-3xl font-semibold mb-6">System Settings</h2>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-3xl">
+                    <h3 class="text-xl font-medium mb-4">SMTP Email Configuration</h3>
+                    <p class="text-sm text-gray-600 mb-6">Configure the email details below so the backend can send inquiry alerts directly to the admin.</p>
+                    <form id="settings-form">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">SMTP Host (e.g. smtp.gmail.com)</label>
+                                <input type="text" id="setting_smtp_host" class="w-full border p-2 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">SMTP Port (465 or 587)</label>
+                                <input type="text" id="setting_smtp_port" class="w-full border p-2 rounded">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">SMTP User / Email</label>
+                                <input type="text" id="setting_smtp_user" class="w-full border p-2 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">SMTP Password / App Password</label>
+                                <input type="password" id="setting_smtp_pass" class="w-full border p-2 rounded placeholder-gray-400" placeholder="••••••••">
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-1">Recipient Email (where to receive notifications)</label>
+                            <input type="text" id="setting_recipient_email" class="w-full border p-2 rounded">
+                        </div>
+                        <button type="submit" class="bg-black text-white px-6 py-2 rounded shadow hover:bg-gray-800 transition">Save Settings</button>
+                        <span id="settings-message" class="ml-3 text-sm text-green-600 hidden">Saved successfully!</span>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/admin/app.js"></script>
+</body>
+</html>
