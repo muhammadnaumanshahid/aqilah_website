@@ -1,5 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Welcome Curtain Reveal Logic
+    const curtain = document.getElementById('welcome-curtain');
+    if (curtain) {
+        const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+        if (!hasSeenWelcome) {
+            // Lock background scrolling while playing animation
+            document.body.style.overflow = 'hidden'; 
+            
+            // Wait for text to fade in and out, then trigger slide up
+            setTimeout(() => {
+                curtain.classList.add('slide-up');
+                document.body.style.overflow = ''; // Unlock scrolling
+                
+                // Detach from DOM for performance
+                setTimeout(() => curtain.remove(), 1000); 
+            }, 3200); 
+            
+            localStorage.setItem('hasSeenWelcome', 'true');
+        } else {
+            // Already seen it, immediately remove curtain context
+            curtain.style.display = 'none';
+        }
+    }
+
     // Navbar Scroll Effect
     const navbar = document.getElementById('navbar');
     

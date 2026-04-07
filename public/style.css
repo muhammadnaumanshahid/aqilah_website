@@ -1171,3 +1171,56 @@ body.project-page .navbar:not(.scrolled) .mobile-menu-btn span {
 .project-cta {
     padding: 5rem 0 3rem !important; /* Reduced vertical padding */
 }
+
+/* =========================================================================
+   WELCOME CURTAIN
+   ========================================================================= */
+.welcome-curtain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a1a;
+    color: #fff;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.welcome-curtain.slide-up {
+    transform: translateY(-100%);
+}
+
+.welcome-curtain .welcome-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 300;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: textFadeIn 0.8s ease forwards 0.5s, textFadeOut 0.8s ease forwards 2.5s;
+    padding: 0 20px;
+}
+
+@media (max-width: 768px) {
+    .welcome-curtain .welcome-text {
+        font-size: 1.8rem;
+    }
+}
+
+@keyframes textFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes textFadeOut {
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
