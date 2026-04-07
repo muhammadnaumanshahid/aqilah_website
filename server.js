@@ -256,12 +256,12 @@ app.post('/api/projects', authenticateToken, upload.any(), (req, res) => {
     if (req.files) {
         req.files.forEach(f => {
             if (f.fieldname === 'main_image') {
-                main_image = '/uploads/' + f.filename;
+                main_image = '/images/' + f.filename;
             } else if (f.fieldname.startsWith('gallery_image_')) {
                 const idx = parseInt(f.fieldname.split('_')[2], 10);
                 if (!parsedContent.gallery) parsedContent.gallery = [];
                 if (!parsedContent.gallery[idx]) parsedContent.gallery[idx] = {};
-                parsedContent.gallery[idx].image = '/uploads/' + f.filename;
+                parsedContent.gallery[idx].image = '/images/' + f.filename;
             }
         });
     }
@@ -286,12 +286,12 @@ app.put('/api/projects/:id', authenticateToken, upload.any(), (req, res) => {
     if (req.files) {
         req.files.forEach(f => {
             if (f.fieldname === 'main_image') {
-                main_image = '/uploads/' + f.filename;
+                main_image = '/images/' + f.filename;
             } else if (f.fieldname.startsWith('gallery_image_')) {
                 const idx = parseInt(f.fieldname.split('_')[2], 10);
                 if (!parsedContent.gallery) parsedContent.gallery = [];
                 if (!parsedContent.gallery[idx]) parsedContent.gallery[idx] = {};
-                parsedContent.gallery[idx].image = '/uploads/' + f.filename;
+                parsedContent.gallery[idx].image = '/images/' + f.filename;
             }
         });
     }
