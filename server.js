@@ -601,6 +601,34 @@ app.post('/api/media/item/delete', authenticateToken, (req, res) => {
     }
 });
 
+app.post('/api/media/items/delete', authenticateToken, (req, res) => {
+    let reqDir = req.body.dir || '';
+    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    const names = req.body.names;
+    
+    if (!Array.isArray(names) || names.length === 0) return res.status(400).json({ error: 'Array of item names required' });
+    
+    // Validate directory trap
+    if (reqDir.includes('..')) return res.status(403).json({ error: 'Forbidden' });
+
+    let deletedCount = 0;
+    try {
+        names.forEach(itemName => {
+            if (itemName.includes('..')) return; // skip illegal items
+            const targetPath = path.resolve(path.join(imagesRoot, reqDir, itemName));
+            if (!targetPath.startsWith(imagesRoot)) return; // skip illegal paths
+            if (fs.existsSync(targetPath)) {
+                fs.rmSync(targetPath, { recursive: true, force: true });
+                deletedCount++;
+            }
+        });
+        res.json({ success: true, count: deletedCount });
+    } catch (e) {
+        console.error("Bulk delete error: ", e);
+        res.status(500).json({ error: 'Failed during bulk deletion operations' });
+    }
+});
+
 app.post('/api/media/upload', authenticateToken, (req, res) => {
     mediaUpload.array('files', 20)(req, res, function (err) {
         if (err instanceof multer.MulterError) {

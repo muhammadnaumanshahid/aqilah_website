@@ -663,6 +663,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const managementBreadcrumbs = document.getElementById('management-breadcrumbs');
     const managementUploadInput = document.getElementById('management-upload-input');
     const managementUploadOverlay = document.getElementById('management-upload-overlay');
+    const managementBulkDeleteBtn = document.getElementById('management-bulk-delete-btn');
+    const managementBulkCount = document.getElementById('management-bulk-count');
     let currentManagementPath = '';
 
     document.querySelectorAll('.nav-link[data-target="media-management-view"]').forEach(b => {
@@ -708,6 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             gridHtml += `
                 <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition relative group mgt-folder" data-path="${fPath}">
+                    <input type="checkbox" class="absolute top-2 left-2 z-20 mgt-bulk-check w-4 h-4 cursor-pointer" data-name="${f}">
                     <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="folder" data-name="${f}" title="Delete Folder">
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
@@ -720,7 +723,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             const fullUrl = '/images/' + fPath;
             gridHtml += `
-                <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between">
+                <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between hidden-a-tag-fix-target">
+                    <input type="checkbox" class="absolute top-2 left-2 z-20 mgt-bulk-check w-4 h-4 cursor-pointer" data-name="${f}">
                     <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="file" data-name="${f}" title="Delete File">
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
@@ -741,10 +745,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         managementGrid.innerHTML = gridHtml;
+        managementBulkDeleteBtn.classList.add('hidden'); // Reset bulk
         
+        // Handle Bulk Selection
+        document.querySelectorAll('.mgt-bulk-check').forEach(chk => {
+            chk.addEventListener('click', (e) => e.stopPropagation()); // Don't trigger folder open
+            chk.addEventListener('change', () => {
+                const checkedCount = document.querySelectorAll('.mgt-bulk-check:checked').length;
+                if (checkedCount > 0) {
+                    managementBulkDeleteBtn.classList.remove('hidden');
+                    managementBulkCount.textContent = checkedCount;
+                } else {
+                    managementBulkDeleteBtn.classList.add('hidden');
+                }
+            });
+        });
+
         document.querySelectorAll('.mgt-folder').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target.closest('.mgt-delete')) return; // Ignore if clicking delete
+                if (e.target.closest('.mgt-delete') || e.target.closest('.mgt-bulk-check')) return;
                 loadManagementMedia(el.dataset.path);
             });
         });
@@ -771,6 +790,31 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // BULK DELETE ACTION
+    managementBulkDeleteBtn.addEventListener('click', async () => {
+        const checked = document.querySelectorAll('.mgt-bulk-check:checked');
+        if (checked.length === 0) return;
+        
+        if (!confirm(`Are you sure you want to permanently delete these ${checked.length} selected items?`)) return;
+
+        const names = Array.from(checked).map(chk => chk.dataset.name);
+        
+        managementUploadOverlay.classList.remove('hidden'); // Reuse loading visual
+        const delRes = await _fetch('/api/media/items/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dir: currentManagementPath, names })
+        });
+        managementUploadOverlay.classList.add('hidden');
+
+        if (delRes.ok) {
+            loadManagementMedia(currentManagementPath);
+        } else {
+            const err = await delRes.json();
+            alert('Bulk deletion failed: ' + (err.error || 'Unknown error'));
+        }
+    });
 
     const mgtNewFolderBtn = document.getElementById('management-new-folder-btn');
     if (mgtNewFolderBtn) {
