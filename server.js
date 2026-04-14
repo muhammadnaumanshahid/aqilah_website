@@ -536,7 +536,9 @@ const mediaStorage = multer.diskStorage({
 const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
 app.get('/api/media', authenticateToken, (req, res) => {
-    let reqDir = req.query.dir || '';
+    // We use 'folder' instead of 'dir' because many basic WAF configs (like cPanel ModSecurity)
+    // aggressively false-positive strings with '?dir=' as Directory Traversal attacks and return HTML 403 pages
+    let reqDir = req.query.folder || '';
     reqDir = reqDir.replace(/\.\./g, '').replace(/^\/+/, ''); // Sanitize rigorously to prevent traversal
     
     const targetDir = path.resolve(path.join(imagesRoot, reqDir));

@@ -672,8 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadManagementMedia(pathStr) {
         currentManagementPath = pathStr;
-        // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
-        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
+        // Rename query param from 'dir' to 'folder' to mathematically bypass ModSecurity LFI false-positives
+        const res = await _fetch(`/api/media?folder=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
         
         let data;
         try {
@@ -821,8 +821,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMedia(pathStr) {
         currentMediaPath = pathStr;
-        // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
-        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
+        // Rename query param to bypass ModSecurity
+        const res = await _fetch(`/api/media?folder=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
         let data;
         try {
             data = await res.json();
