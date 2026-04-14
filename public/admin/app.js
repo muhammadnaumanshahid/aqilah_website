@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('aqilahCurrentAdminTab', targetId);
 
             // Hide all sections, show target
-            viewSections.forEach(section => section.classList.add('hidden'));
+            document.querySelectorAll('.view-section').forEach(section => section.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
             // Load logic
