@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function _fetch(url, options = {}) {
         options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
         return fetch(url, options).then(res => {
-            if (res.status === 401 || res.status === 403) {
+            if (res.status === 401) {
                 logoutBtn.click();
             }
             return res;

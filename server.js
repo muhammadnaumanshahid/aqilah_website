@@ -117,14 +117,13 @@ app.use('/api/login', apiLimiter);
 app.use('/api/inquiries', apiLimiter); // general limiter for GET (admin)
 app.post('/api/inquiries', inquiryLimiter); // strict limiter for public form POST
 
-// Auth Middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Forbidden' });
+        if (err) return res.status(401).json({ error: 'Token expired or invalid' });
         req.user = user;
         next();
     });
@@ -530,10 +529,11 @@ const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSi
 
 app.get('/api/media', authenticateToken, (req, res) => {
     let reqDir = req.query.dir || '';
-    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    reqDir = reqDir.replace(/\.\./g, '').replace(/^\/+/, ''); // Sanitize rigorously to prevent traversal
     
     const targetDir = path.resolve(path.join(imagesRoot, reqDir));
-    if (!targetDir.startsWith(imagesRoot)) return res.status(403).json({ error: 'Forbidden' });
+    // Check if resolved path starts with the absolute images path reliably
+    if (!targetDir.startsWith(imagesRoot)) return res.status(403).json({ error: 'Path resolution forbidden' });
     if (!fs.existsSync(targetDir)) return res.status(404).json({ error: 'Directory not found' });
     
     const items = fs.readdirSync(targetDir, { withFileTypes: true });
