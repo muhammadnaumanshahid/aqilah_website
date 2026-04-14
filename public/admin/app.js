@@ -661,8 +661,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadManagementMedia(pathStr) {
         currentManagementPath = pathStr;
-        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}`);
+        // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
+        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
         const data = await res.json();
+        
+        if (!res.ok) {
+            managementGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-500"><i class="fas fa-exclamation-triangle text-4xl mb-4"></i><p class="font-bold">Error: ${data.error || 'Failed to load'}</p><p class="text-xs text-gray-500 mt-2">Check server logs or path permissions.</p></div>`;
+            return;
+        }
         
         const parts = pathStr.split('/').filter(p => p);
         let breadHtml = `<button class="text-blue-600 hover:underline hover:text-blue-800 mgt-crumb" data-path="">/images</button>`;
@@ -792,8 +798,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMedia(pathStr) {
         currentMediaPath = pathStr;
-        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}`);
+        // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
+        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
         const data = await res.json();
+        
+        if (!res.ok) {
+            mediaGrid.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 font-medium"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><br>Error: ${data.error || 'Failed to load media'}</div>`;
+            return;
+        }
         
         // Render Breadcrumbs
         const parts = pathStr.split('/').filter(p => p);
