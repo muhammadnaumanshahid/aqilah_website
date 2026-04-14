@@ -16,6 +16,7 @@ const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const APP_VERSION = Date.now(); // Used for dynamic Cache-Busting
 
 // Dynamic Safe JWT Secret
 let JWT_SECRET = process.env.JWT_SECRET;
@@ -82,12 +83,35 @@ const escapeHTML = str => str ? String(str).replace(/[&<>'"]/g,
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Explicit root route for LiteSpeed/Passenger environments
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// --- AUTO CACHE BUSTING MIDDLEWARE ---
+// Intercepts HTML serving to dynamically append ?v=APP_VERSION to all CSS/JS assets, completely removing browser caching issues
+app.use((req, res, next) => {
+    let reqPath = req.path;
+    
+    // Normalize root requests to index.html
+    if (reqPath === '/' || reqPath === '/admin' || reqPath === '/admin/') {
+        reqPath = reqPath.endsWith('/') ? `${reqPath}index.html` : `${reqPath}/index.html`;
+    }
+    
+    if (reqPath.endsWith('.html')) {
+        const fullPath = path.join(__dirname, 'public', reqPath);
+        if (fs.existsSync(fullPath)) {
+            let content = fs.readFileSync(fullPath, 'utf8');
+            // Dynamically inject the unique reboot timestamp cache-busting string into statically compiled links
+            content = content.replace(/(href|src)="([^"]+\.(css|js))(\?v=[^"]*)?"/g, `$1="$2?v=${APP_VERSION}"`);
+            
+            res.setHeader('Content-Type', 'text/html');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); // Never cache HTML!
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            return res.send(content);
+        }
+    }
+    next();
 });
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/login', apiLimiter);
 app.use('/api/inquiries', apiLimiter); // general limiter for GET (admin)
