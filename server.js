@@ -49,10 +49,10 @@ const inquiryLimiter = rateLimit({
     message: { error: 'Too many submissions from this connection. Please try again later.' }
 });
 
-// Ensure images directory exists
-const imagesRoot = path.join(__dirname, 'public', 'images');
+// Ensure images directory exists. Defaults to local public folder, but can be overridden by cPanel environment variables
+const imagesRoot = process.env.IMAGES_PATH ? path.resolve(process.env.IMAGES_PATH) : path.join(__dirname, 'public', 'images');
 if (!fs.existsSync(imagesRoot)) {
-    fs.mkdirSync(imagesRoot, { recursive: true });
+    try { fs.mkdirSync(imagesRoot, { recursive: true }); } catch (e) { console.error("Could not create images root:", e); }
 }
 
 // Multer Config for General Project Uploads
@@ -108,6 +108,14 @@ app.use((req, res, next) => {
             return res.send(content);
         }
     }
+    next();
+});
+
+// Ban all caching on API routes (bypasses aggressive LiteSpeed proxy caching)
+app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     next();
 });
 
