@@ -41,6 +41,13 @@ const apiLimiter = rateLimit({
     message: { error: 'Too many requests. Please try again later.' }
 });
 
+// Strict limiter specifically for the inquiry form — 5 submissions per 15 min per IP
+const inquiryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Too many submissions from this connection. Please try again later.' }
+});
+
 // Ensure images directory exists
 const imagesRoot = path.join(__dirname, 'public', 'images');
 if (!fs.existsSync(imagesRoot)) {
@@ -83,7 +90,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/login', apiLimiter);
-app.use('/api/inquiries', apiLimiter);
+app.use('/api/inquiries', apiLimiter); // general limiter for GET (admin)
+app.post('/api/inquiries', inquiryLimiter); // strict limiter for public form POST
 
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
@@ -334,40 +342,75 @@ app.get('/api/inquiries', authenticateToken, (req, res) => {
 });
 
 app.post('/api/inquiries', async (req, res) => {
-    const name = escapeHTML(req.body.name);
-    const email = escapeHTML(req.body.email);
-    const phone = escapeHTML(req.body.phone);
-    const property_type = escapeHTML(req.body.property_type);
-    const budget = escapeHTML(req.body.budget);
-    const timeline = escapeHTML(req.body.timeline);
-    
-    // Save to DB
-    db.run('INSERT INTO inquiries (name, email, phone, property_type, budget, timeline) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, email, phone, property_type, budget, timeline],
-        async function(err) {
-            if (err) return res.status(500).json({ error: 'Failed to save inquiry.' });
-            
-            // Try sending email
-            try {
-                const settings = await getSettings();
-                
-                if (settings.smtp_host && settings.smtp_user) {
-                    const transporter = nodemailer.createTransport({
-                        host: settings.smtp_host,
-                        port: parseInt(settings.smtp_port) || 465,
-                        secure: (parseInt(settings.smtp_port) === 465), // true for 465, false for other ports
-                        auth: {
-                            user: settings.smtp_user,
-                            pass: settings.smtp_pass
-                        }
-                    });
+    // --- SECURITY LAYER 1: Honeypot check ---
+    // Bots that auto-fill hidden fields are silently discarded
+    if (req.body._gotcha && req.body._gotcha.trim() !== '') {
+        console.warn('Honeypot triggered — bot submission discarded.');
+        return res.json({ message: 'Inquiry submitted successfully.' }); // fake success to confuse bots
+    }
 
-                    await transporter.sendMail({
-                        from: `"Home with Aqilah Website" <${settings.smtp_user}>`,
-                        to: settings.recipient_email,
-                        subject: `New Inquiry from ${name}`,
-                        text: `
-You have a new inquiry from the website form:
+    // --- SECURITY LAYER 2: Input validation ---
+    const rawName     = (req.body.name     || '').trim();
+    const rawEmail    = (req.body.email    || '').trim();
+    const rawPhone    = (req.body.phone    || '').trim();
+    const rawPropType = (req.body.property_type || '').trim();
+    const rawBudget   = (req.body.budget   || '').trim();
+    const rawTimeline = (req.body.timeline || '').trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[\d\s+\-().]{8,20}$/;
+
+    const errors = [];
+    if (rawName.length < 2)                  errors.push('Name must be at least 2 characters.');
+    if (!emailRegex.test(rawEmail))           errors.push('A valid email address is required.');
+    if (!phoneRegex.test(rawPhone))           errors.push('A valid phone number (8–20 digits) is required.');
+    if (!rawPropType)                         errors.push('Please select a property type.');
+    if (!rawBudget)                           errors.push('Please select a budget range.');
+
+    if (errors.length > 0) {
+        return res.status(400).json({ error: errors.join(' ') });
+    }
+
+    // --- SECURITY LAYER 3: Duplicate cooldown (same email within 10 minutes) ---
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    db.get(
+        "SELECT id FROM inquiries WHERE email = ? AND date_submitted >= ?",
+        [rawEmail, tenMinutesAgo],
+        async (err, existing) => {
+            if (existing) {
+                console.warn(`Duplicate submission blocked for: ${rawEmail}`);
+                // Return a polite message — don't reveal we detected it as spam
+                return res.json({ message: 'Inquiry submitted successfully.' });
+            }
+
+            // --- All checks passed: sanitise and save ---
+            const name          = escapeHTML(rawName);
+            const email         = escapeHTML(rawEmail);
+            const phone         = escapeHTML(rawPhone);
+            const property_type = escapeHTML(rawPropType);
+            const budget        = escapeHTML(rawBudget);
+            const timeline      = escapeHTML(rawTimeline);
+
+            db.run('INSERT INTO inquiries (name, email, phone, property_type, budget, timeline) VALUES (?, ?, ?, ?, ?, ?)',
+                [name, email, phone, property_type, budget, timeline],
+                async function(dbErr) {
+                    if (dbErr) return res.status(500).json({ error: 'Failed to save inquiry.' });
+
+                    // Try sending email notification
+                    try {
+                        const settings = await getSettings();
+                        if (settings.smtp_host && settings.smtp_user) {
+                            const transporter = nodemailer.createTransport({
+                                host: settings.smtp_host,
+                                port: parseInt(settings.smtp_port) || 465,
+                                secure: (parseInt(settings.smtp_port) === 465),
+                                auth: { user: settings.smtp_user, pass: settings.smtp_pass }
+                            });
+                            await transporter.sendMail({
+                                from: `"Home with Aqilah Website" <${settings.smtp_user}>`,
+                                to: settings.recipient_email,
+                                subject: `New Inquiry from ${name}`,
+                                text: `You have a new inquiry from the website form:
 
 Name: ${name}
 Email: ${email}
@@ -376,19 +419,19 @@ Property Type: ${property_type}
 Budget: ${budget}
 Timeline/Key Collection: ${timeline}
 
-You can view complete details in the Admin Dashboard.
-                        `
-                    });
-                    console.log("Email sent successfully.");
-                } else {
-                    console.log("SMTP not configured. Email suppressed.");
-                }
-            } catch (emailErr) {
-                console.error("Failed to send email:", emailErr.message);
-                // We still successfully saved the inquiry, so we won't throw 500
-            }
+You can view complete details in the Admin Dashboard.`
+                            });
+                            console.log('Email sent successfully.');
+                        } else {
+                            console.log('SMTP not configured. Email suppressed.');
+                        }
+                    } catch (emailErr) {
+                        console.error('Failed to send email:', emailErr.message);
+                    }
 
-            res.json({ message: 'Inquiry submitted successfully.' });
+                    res.json({ message: 'Inquiry submitted successfully.' });
+                }
+            );
         }
     );
 });

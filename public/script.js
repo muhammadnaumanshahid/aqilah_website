@@ -76,7 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     formMessage.innerText = 'Message received. We will be in touch shortly!';
                 } else {
                     const data = await response.json();
-                    if (Object.hasOwn(data, 'errors')) {
+                    if (data.error) {
+                        formMessage.innerText = data.error;
+                    } else if (Object.hasOwn(data, 'errors')) {
                         formMessage.innerText = data["errors"].map(error => error["message"]).join(", ");
                     } else {
                         formMessage.innerText = 'Oops! There was a problem submitting your form.';
