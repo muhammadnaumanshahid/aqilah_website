@@ -560,7 +560,8 @@ app.get('/api/media', authenticateToken, (req, res) => {
         }
     });
     
-    res.json({ folders, files });
+    // Pass the absolute target directory back for debugging on cPanel
+    res.json({ folders, files, serverPath: targetDir });
 });
 
 app.post('/api/media/folder', authenticateToken, (req, res) => {

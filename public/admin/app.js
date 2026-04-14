@@ -14,7 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // CHECK LOGIN STATUS
     if (token) {
         showDashboard();
-        loadOverview();
+        const savedTab = localStorage.getItem('aqilahCurrentAdminTab');
+        if (savedTab) {
+            const tempTab = document.querySelector(`.nav-link[data-target="${savedTab}"]`);
+            if (tempTab) setTimeout(() => tempTab.click(), 50);
+            else loadOverview();
+        } else {
+            loadOverview();
+        }
     } else {
         loginScreen.classList.remove('hidden');
     }
@@ -82,16 +89,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             // Highlight active nav
-            document.querySelectorAll('.nav-link').forEach(nav => {
-                nav.classList.remove('bg-gray-800', 'text-white');
-                nav.classList.add('text-gray-300');
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('bg-gray-800', 'text-white');
+                l.classList.add('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
             });
+            link.classList.remove('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
             link.classList.add('bg-gray-800', 'text-white');
-            link.classList.remove('text-gray-300');
 
-            // Show corresponding view
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
             const targetId = link.getAttribute('data-target');
+            // Save state for hard reloads
+            localStorage.setItem('aqilahCurrentAdminTab', targetId);
+
+            // Hide all sections, show target
+            viewSections.forEach(section => section.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
             // Load logic
@@ -716,7 +726,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         managementGrid.innerHTML = gridHtml;
         const defaultPath = currentManagementPath ? `/images/${currentManagementPath}` : '/images';
-        if (managementPathDisplay) managementPathDisplay.textContent = defaultPath;
+        if (managementPathDisplay) {
+            managementPathDisplay.innerHTML = `<span class="font-bold text-gray-500 mr-2">VIRTUAL:</span> ${defaultPath} <span class="mx-3 text-gray-300">|</span> <span class="font-bold text-red-500 mr-2">SERVER:</span> <span class="select-all">${data.serverPath || 'Unknown'}</span>`;
+        }
         
         document.querySelectorAll('.mgt-folder').forEach(el => {
             el.addEventListener('click', () => loadManagementMedia(el.dataset.path));
