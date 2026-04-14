@@ -276,6 +276,18 @@ app.post('/api/projects', authenticateToken, upload.any(), (req, res) => {
     );
 });
 
+// Reorder projects (drag-and-drop) — MUST be before /:id to avoid Express wildcard conflict
+app.put('/api/projects/reorder', authenticateToken, (req, res) => {
+    const items = req.body; // [{id, sort_order}, ...]
+    if (!Array.isArray(items)) return res.status(400).json({ error: 'Expected array' });
+    const stmt = db.prepare('UPDATE projects SET sort_order = ? WHERE id = ?');
+    items.forEach(item => stmt.run([item.sort_order, item.id]));
+    stmt.finalize((err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Order saved' });
+    });
+});
+
 app.put('/api/projects/:id', authenticateToken, upload.any(), (req, res) => {
     const { title, location } = req.body;
     let content = req.body.content || '{}';
@@ -310,18 +322,6 @@ app.delete('/api/projects/:id', authenticateToken, (req, res) => {
     db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Project deleted' });
-    });
-});
-
-// Reorder projects (drag-and-drop)
-app.put('/api/projects/reorder', authenticateToken, (req, res) => {
-    const items = req.body; // [{id, sort_order}, ...]
-    if (!Array.isArray(items)) return res.status(400).json({ error: 'Expected array' });
-    const stmt = db.prepare('UPDATE projects SET sort_order = ? WHERE id = ?');
-    items.forEach(item => stmt.run([item.sort_order, item.id]));
-    stmt.finalize((err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Order saved' });
     });
 });
 
