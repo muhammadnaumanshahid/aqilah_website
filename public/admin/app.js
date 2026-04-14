@@ -15,9 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (token) {
         showDashboard();
         const savedTab = localStorage.getItem('aqilahCurrentAdminTab');
-        if (savedTab) {
+        if (savedTab && savedTab !== 'overview-view') {
+            document.getElementById('overview-view').classList.add('hidden');
             const tempTab = document.querySelector(`.nav-link[data-target="${savedTab}"]`);
-            if (tempTab) setTimeout(() => tempTab.click(), 50);
+            if (tempTab) tempTab.click(); 
             else loadOverview();
         } else {
             loadOverview();
@@ -673,12 +674,22 @@ document.addEventListener('DOMContentLoaded', () => {
         currentManagementPath = pathStr;
         // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
         const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
-        const data = await res.json();
+        
+        let data;
+        try {
+            data = await res.json();
+        } catch (err) {
+            managementGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-500 font-bold">Failed to parse server response. A Proxy or WAF is likely blocking the request and returning HTML instead of JSON. (HTTP Status: ${res.status})</div>`;
+            return;
+        }
         
         if (!res.ok) {
             managementGrid.innerHTML = `<div class="col-span-full text-center py-20 text-red-500"><i class="fas fa-exclamation-triangle text-4xl mb-4"></i><p class="font-bold">Error: ${data.error || 'Failed to load'}</p><p class="text-xs text-gray-500 mt-2">Check server logs or path permissions.</p></div>`;
             return;
         }
+        
+        const foldersList = data.folders || [];
+        const filesList = data.files || [];
         
         const parts = pathStr.split('/').filter(p => p);
         let breadHtml = `<button class="text-blue-600 hover:underline hover:text-blue-800 mgt-crumb" data-path="">/images</button>`;
@@ -694,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let gridHtml = '';
-        data.folders.forEach(f => {
+        foldersList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             gridHtml += `
                 <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition mgt-folder" data-path="${fPath}">
@@ -703,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         });
         
-        data.files.forEach(f => {
+        filesList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             const fullUrl = '/images/' + fPath;
             gridHtml += `
@@ -717,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         });
         
-        if (data.folders.length === 0 && data.files.length === 0) {
+        if (foldersList.length === 0 && filesList.length === 0) {
            gridHtml = `<div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
                <i class="fas fa-folder-open text-4xl mb-3 text-gray-300"></i>
                <p>This folder is currently empty.</p>
@@ -812,12 +823,21 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMediaPath = pathStr;
         // Use cache-busting timestamp to aggressively bypass LiteSpeed proxies ignoring no-cache headers
         const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}&_t=${Date.now()}`);
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch (err) {
+            mediaGrid.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 font-bold">Failed to parse JSON. (Status: ${res.status})</div>`;
+            return;
+        }
         
         if (!res.ok) {
             mediaGrid.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 font-medium"><i class="fas fa-exclamation-triangle mb-2 text-xl"></i><br>Error: ${data.error || 'Failed to load media'}</div>`;
             return;
         }
+        
+        const foldersList = data.folders || [];
+        const filesList = data.files || [];
         
         // Render Breadcrumbs
         const parts = pathStr.split('/').filter(p => p);
@@ -835,7 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render Grid
         let gridHtml = '';
-        data.folders.forEach(f => {
+        foldersList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             gridHtml += `
                 <div class="bg-white border rounded p-3 text-center cursor-pointer hover:shadow hover:border-blue-300 transition media-folder" data-path="${fPath}">
@@ -844,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         });
         
-        data.files.forEach(f => {
+        filesList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             const fullUrl = '/images/' + fPath;
             gridHtml += `
@@ -859,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
         });
         
-        if(data.folders.length === 0 && data.files.length === 0) {
+        if(foldersList.length === 0 && filesList.length === 0) {
            gridHtml = `<div class="col-span-full text-center py-10 text-gray-400">Empty directory</div>`;
         }
         

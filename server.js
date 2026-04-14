@@ -629,6 +629,18 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
+// --- DIAGNOSTIC ENDPOINT ---
+app.get('/api/diagnostics', (req, res) => {
+    res.json({
+        nodeProcessCwd: process.cwd(),
+        serverDirname: __dirname,
+        computedImagesRoot: imagesRoot,
+        envCustomPath: process.env.IMAGES_PATH || 'Not set',
+        imagesRootExistsOnDisk: fs.existsSync(imagesRoot),
+        imagesRootItems: fs.existsSync(imagesRoot) ? fs.readdirSync(imagesRoot).slice(0, 5) : 'Folder missing'
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
