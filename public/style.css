@@ -153,6 +153,13 @@ img {
     color: var(--color-text-dark);
 }
 
+/* Keep Enquire button text white at all times, even when navbar scrolled */
+.navbar.scrolled nav a.btn-primary,
+.navbar.scrolled .btn-primary {
+    color: #fff !important;
+    background-color: #8B3A3A; /* slightly brighter burgundy — better white text contrast */
+}
+
 .logo {
     font-family: var(--font-body);
     font-size: 1.2rem;

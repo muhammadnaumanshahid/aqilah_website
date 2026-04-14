@@ -19,8 +19,18 @@ db.serialize(() => {
         title TEXT NOT NULL,
         location TEXT,
         main_image TEXT,
-        content TEXT
+        content TEXT,
+        sort_order INTEGER DEFAULT 0
     )`);
+
+    // Migration: add sort_order to existing projects table if missing
+    db.run(`ALTER TABLE projects ADD COLUMN sort_order INTEGER DEFAULT 0`, (err) => {
+        if (!err) {
+            // Column was just added — populate it from current id order
+            db.run(`UPDATE projects SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL`);
+            console.log('Migration: sort_order column added to projects.');
+        }
+    });
 
     // 2. Inquiries Table
     db.run(`CREATE TABLE IF NOT EXISTS inquiries (

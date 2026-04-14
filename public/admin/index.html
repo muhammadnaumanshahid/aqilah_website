@@ -6,6 +6,7 @@
     <title>Aqilah Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -253,7 +254,7 @@
                             </div>
 
                             <hr class="my-4 border-gray-300">
-                            <h4 class="font-semibold mb-2">Gallery (Up to 4 Images)</h4>
+                            <h4 class="font-semibold mb-2">Gallery (Up to 10 Images)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm" id="gallery-manager">
                                 <!-- JS will inject 4 rows -->
                             </div>
@@ -270,6 +271,7 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 border-b">
+                                <th class="p-3 font-semibold text-sm w-8 text-gray-400" title="Drag rows to reorder"><i class="fas fa-grip-vertical"></i></th>
                                 <th class="p-4 font-semibold text-sm w-16">Image</th>
                                 <th class="p-4 font-semibold text-sm">Title</th>
                                 <th class="p-4 font-semibold text-sm">Location</th>

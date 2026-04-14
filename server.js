@@ -232,7 +232,7 @@ const getSettings = () => {
 
 // --- PROJECTS API ---
 app.get('/api/projects', (req, res) => {
-    db.all('SELECT * FROM projects ORDER BY id DESC', (err, rows) => {
+    db.all('SELECT * FROM projects ORDER BY sort_order ASC, id ASC', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -310,6 +310,18 @@ app.delete('/api/projects/:id', authenticateToken, (req, res) => {
     db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Project deleted' });
+    });
+});
+
+// Reorder projects (drag-and-drop)
+app.put('/api/projects/reorder', authenticateToken, (req, res) => {
+    const items = req.body; // [{id, sort_order}, ...]
+    if (!Array.isArray(items)) return res.status(400).json({ error: 'Expected array' });
+    const stmt = db.prepare('UPDATE projects SET sort_order = ? WHERE id = ?');
+    items.forEach(item => stmt.run([item.sort_order, item.id]));
+    stmt.finalize((err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Order saved' });
     });
 });
 

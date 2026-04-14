@@ -293,10 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectForm = document.getElementById('project-form');
     const galleryManager = document.getElementById('gallery-manager');
     
-    // Inject Gallery Fields
+    // Inject Gallery Fields (10 images)
     if (galleryManager) {
         galleryManager.innerHTML = '';
-        for(let i=0; i<4; i++) {
+        for(let i=0; i<10; i++) {
             galleryManager.innerHTML += '<div class="border p-2 rounded bg-gray-50">' +
                 '<label class="block font-medium mb-1 text-xs">Image ' + (i+1) + '</label>' +
                 '<img id="gallery_preview_' + i + '" src="" class="h-16 w-auto object-cover rounded mb-2 hidden border">' +
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('main_existing_image').value = '';
         document.getElementById('main-image-preview').classList.add('hidden');
         document.getElementById('main-image-preview').src = '';
-        for (let i=0; i<4; i++) {
+        for (let i=0; i<10; i++) {
             document.getElementById(`gallery_existing_${i}`).value = '';
             const gPrev = document.getElementById(`gallery_preview_${i}`);
             gPrev.classList.add('hidden');
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gallery: []
         };
 
-        for(let i=0; i<4; i++) {
+        for(let i=0; i<10; i++) {
             const caption = document.getElementById(`gallery_caption_${i}`).value;
             const existing = document.getElementById(`gallery_existing_${i}`).value;
             const fileInput = document.getElementById(`gallery_file_${i}`);
@@ -390,7 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
         projects.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = 'border-b';
+            tr.dataset.id = p.id;
             tr.innerHTML = `
+                <td class="p-3 w-8 cursor-grab drag-handle text-gray-400" title="Drag to reorder">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                    </svg>
+                </td>
                 <td class="p-4"><img src="${p.main_image}" class="w-12 h-12 object-cover rounded bg-gray-100" /></td>
                 <td class="p-4 font-medium">${p.title}</td>
                 <td class="p-4 text-gray-600">${p.location}</td>
@@ -401,6 +407,25 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             tbody.appendChild(tr);
         });
+
+        // Wire drag-and-drop reordering via SortableJS
+        if (window.Sortable && tbody) {
+            if (tbody._sortable) tbody._sortable.destroy();
+            tbody._sortable = new Sortable(tbody, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'bg-blue-50',
+                onEnd: async () => {
+                    const rows = [...tbody.querySelectorAll('tr[data-id]')];
+                    const order = rows.map((row, idx) => ({ id: parseInt(row.dataset.id), sort_order: idx + 1 }));
+                    await _fetch('/api/projects/reorder', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(order)
+                    });
+                }
+            });
+        }
 
         // Attach listeners
         document.querySelectorAll('.edit-btn').forEach(b => {
@@ -452,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('testi-name').value = c.testimonial.client || '';
             }
             
-            for (let i=0; i<4; i++) {
+            for (let i=0; i<10; i++) {
                 const prev = document.getElementById('gallery_preview_' + i);
                 if (c.gallery && c.gallery[i]) {
                     document.getElementById('gallery_caption_' + i).value = c.gallery[i].caption || '';
