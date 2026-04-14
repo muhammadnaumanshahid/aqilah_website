@@ -647,7 +647,124 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- MEDIA LIBRARY LOGIC ---
+    // --- STANDALONE MEDIA MANAGEMENT LOGIC ---
+    const managementGrid = document.getElementById('management-grid');
+    const managementBreadcrumbs = document.getElementById('management-breadcrumbs');
+    const managementPathDisplay = document.getElementById('management-path-display');
+    const managementUploadInput = document.getElementById('management-upload-input');
+    const managementUploadOverlay = document.getElementById('management-upload-overlay');
+    let currentManagementPath = '';
+
+    document.querySelectorAll('.nav-link[data-target="media-management-view"]').forEach(b => {
+        b.addEventListener('click', () => loadManagementMedia(''));
+    });
+
+    async function loadManagementMedia(pathStr) {
+        currentManagementPath = pathStr;
+        const res = await _fetch(`/api/media?dir=${encodeURIComponent(pathStr)}`);
+        const data = await res.json();
+        
+        const parts = pathStr.split('/').filter(p => p);
+        let breadHtml = `<button class="text-blue-600 hover:underline hover:text-blue-800 mgt-crumb" data-path="">/images</button>`;
+        let runningPath = '';
+        parts.forEach(p => {
+            runningPath += (runningPath ? '/' : '') + p;
+            breadHtml += ` <span class="text-gray-400">/</span> <button class="text-blue-600 hover:underline hover:text-blue-800 mgt-crumb" data-path="${runningPath}">${p}</button>`;
+        });
+        managementBreadcrumbs.innerHTML = breadHtml;
+
+        document.querySelectorAll('.mgt-crumb').forEach(b => {
+            b.addEventListener('click', (e) => loadManagementMedia(e.target.dataset.path));
+        });
+
+        let gridHtml = '';
+        data.folders.forEach(f => {
+            const fPath = pathStr ? `${pathStr}/${f}` : f;
+            gridHtml += `
+                <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition mgt-folder" data-path="${fPath}">
+                    <i class="fas fa-folder text-5xl text-yellow-400 mb-2"></i>
+                    <p class="text-sm truncate font-medium text-gray-800">${f}</p>
+                </div>`;
+        });
+        
+        data.files.forEach(f => {
+            const fPath = pathStr ? `${pathStr}/${f}` : f;
+            const fullUrl = '/images/' + fPath;
+            gridHtml += `
+                <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between">
+                    <div class="h-32 w-full bg-gray-100 flex items-center justify-center rounded overflow-hidden mb-2 relative">
+                        <img src="${fullUrl}" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <p class="text-[11px] truncate font-medium text-gray-700 select-all" title="${f}">${f}</p>
+                    <p class="text-[9px] truncate text-gray-400 mt-1 select-all" title="${fullUrl}">${fullUrl}</p>
+                    <a href="${fullUrl}" target="_blank" class="absolute inset-0 z-10 hidden group-hover:block" title="View Image"></a>
+                </div>`;
+        });
+        
+        if (data.folders.length === 0 && data.files.length === 0) {
+           gridHtml = `<div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+               <i class="fas fa-folder-open text-4xl mb-3 text-gray-300"></i>
+               <p>This folder is currently empty.</p>
+           </div>`;
+        }
+        
+        managementGrid.innerHTML = gridHtml;
+        const defaultPath = currentManagementPath ? `/images/${currentManagementPath}` : '/images';
+        if (managementPathDisplay) managementPathDisplay.textContent = defaultPath;
+        
+        document.querySelectorAll('.mgt-folder').forEach(el => {
+            el.addEventListener('click', () => loadManagementMedia(el.dataset.path));
+        });
+    }
+
+    const mgtNewFolderBtn = document.getElementById('management-new-folder-btn');
+    if (mgtNewFolderBtn) {
+        mgtNewFolderBtn.addEventListener('click', async () => {
+            const name = prompt('Enter new folder name:');
+            if (!name) return;
+            const res = await _fetch('/api/media/folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dir: currentManagementPath, name })
+            });
+            if (res.ok) loadManagementMedia(currentManagementPath);
+            else alert('Failed to create folder');
+        });
+    }
+
+    const mgtUploadBtn = document.getElementById('management-upload-btn');
+    if (mgtUploadBtn && managementUploadInput) {
+        mgtUploadBtn.addEventListener('click', () => managementUploadInput.click());
+        managementUploadInput.addEventListener('change', async () => {
+            if (managementUploadInput.files.length === 0) return;
+            managementUploadOverlay.classList.remove('hidden');
+            
+            const formData = new FormData();
+            formData.append('dir', currentManagementPath);
+            for (let i = 0; i < managementUploadInput.files.length; i++) {
+                formData.append('files', managementUploadInput.files[i]);
+            }
+            
+            try {
+                const res = await _fetch('/api/media/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.error || 'Upload failed');
+                }
+            } catch (e) {
+                alert('Upload failed');
+            }
+            
+            managementUploadInput.value = '';
+            managementUploadOverlay.classList.add('hidden');
+            loadManagementMedia(currentManagementPath);
+        });
+    }
+
+    // --- EXISTING MODAL MEDIA PICKER LOGIC ---
     const mediaModal = document.getElementById('media-modal');
     const mediaGrid = document.getElementById('media-grid');
     const mediaBreadcrumbs = document.getElementById('media-breadcrumbs');
