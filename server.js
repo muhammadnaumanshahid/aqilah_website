@@ -130,17 +130,24 @@ app.get('/api/settings', authenticateToken, (req, res) => {
     });
 });
 
-app.get('/api/public/analytics', (req, res) => {
-    db.get("SELECT value FROM settings WHERE key = 'ga_tracking_id'", (err, row) => {
-        res.json({ tracking_id: row ? row.value : '' });
+app.get('/api/public/config', async (req, res) => {
+    db.all("SELECT key, value FROM settings WHERE key IN ('ga_tracking_id', 'recaptcha_site_key')", (err, rows) => {
+        const config = { tracking_id: '', recaptcha_site_key: '' };
+        if (rows) {
+            rows.forEach(r => {
+                if (r.key === 'ga_tracking_id') config.tracking_id = r.value;
+                if (r.key === 'recaptcha_site_key') config.recaptcha_site_key = r.value;
+            });
+        }
+        res.json(config);
     });
 });
 
 app.put('/api/settings', authenticateToken, (req, res) => {
     const updates = req.body;
-    const stmt = db.prepare('UPDATE settings SET value = ? WHERE key = ?');
+    const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
     for (const [key, value] of Object.entries(updates)) {
-        stmt.run([value, key]);
+        stmt.run([key, value]);
     }
     stmt.finalize();
     res.json({ message: 'Settings updated' });
@@ -347,6 +354,28 @@ app.post('/api/inquiries', async (req, res) => {
     if (req.body._gotcha && req.body._gotcha.trim() !== '') {
         console.warn('Honeypot triggered — bot submission discarded.');
         return res.json({ message: 'Inquiry submitted successfully.' }); // fake success to confuse bots
+    }
+
+    // --- SECURITY LAYER 1.5: reCAPTCHA Verification ---
+    const settings = await getSettings();
+    if (settings.recaptcha_secret_key) {
+        const token = req.body.recaptcha_token;
+        if (!token) return res.status(400).json({ error: 'reCAPTCHA token missing.' });
+        
+        try {
+            const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${settings.recaptcha_secret_key}&response=${token}`;
+            const verifyRes = await global.fetch(googleVerifyUrl, { method: 'POST' });
+            const verifyData = await verifyRes.json();
+            
+            if (!verifyData.success || verifyData.score < 0.5) {
+                console.warn('reCAPTCHA failed:', verifyData);
+                return res.status(400).json({ error: 'Google reCAPTCHA flagged this submission as a potential bot.' });
+            }
+        } catch (e) {
+            console.error('Failed to contact Google reCAPTCHA server:', e.message);
+            // In case google is down, you might want to still accept it, or throw an error. We will throw 500.
+            return res.status(500).json({ error: 'Error validating reCAPTCHA. Please try again.' });
+        }
     }
 
     // --- SECURITY LAYER 2: Input validation ---

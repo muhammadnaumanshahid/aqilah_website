@@ -591,11 +591,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSettings() {
         const res = await _fetch('/api/settings');
         const settings = await res.json();
-        const fields = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'recipient_email', 'ga_tracking_id'];
+        const fields = [
+            'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'recipient_email', 
+            'ga_tracking_id', 'recaptcha_site_key', 'recaptcha_secret_key'
+        ];
         fields.forEach(f => {
             const el = document.getElementById(`setting_${f}`);
             if (el && settings[f]) {
-                if (f === 'smtp_pass') el.value = ''; // Don't expose password, let them overwrite
+                if (f === 'smtp_pass' || f === 'recaptcha_secret_key') el.value = ''; // Don't expose password, let them overwrite
                 else el.value = settings[f];
             }
         });
@@ -625,9 +628,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (integrationsForm) {
         integrationsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const updates = {
-                ga_tracking_id: document.getElementById('setting_ga_tracking_id').value
+            const updates = { 
+                ga_tracking_id: document.getElementById('setting_ga_tracking_id').value.trim(),
+                recaptcha_site_key: document.getElementById('setting_recaptcha_site_key').value.trim()
             };
+            const secretKey = document.getElementById('setting_recaptcha_secret_key').value.trim();
+            if (secretKey) updates.recaptcha_secret_key = secretKey; // Only update if typed
 
             await _fetch('/api/settings', {
                 method: 'PUT',

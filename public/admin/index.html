@@ -351,10 +351,23 @@
                     <h3 class="text-xl font-medium mb-4">Integrations</h3>
                     <p class="text-sm text-gray-600 mb-6">Configure third-party tracking algorithms.</p>
                     <form id="integrations-form">
-                        <div class="mb-6">
+                        <div class="mb-4">
                             <label class="block text-sm font-medium mb-1">Google Analytics Measurement ID (GA4)</label>
                             <input type="text" id="setting_ga_tracking_id" class="w-full border p-2 rounded placeholder-gray-400" placeholder="e.g. G-1234567890">
                             <p class="text-xs text-gray-500 mt-1">Leave entirely blank to disable Google Analytics background injection.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">reCAPTCHA v3 Site Key</label>
+                                <input type="text" id="setting_recaptcha_site_key" class="w-full border p-2 rounded placeholder-gray-400" placeholder="e.g. 6Ld..._XXXXXX">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">reCAPTCHA v3 Secret Key</label>
+                                <input type="password" id="setting_recaptcha_secret_key" class="w-full border p-2 rounded placeholder-gray-400" placeholder="••••••••">
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <p class="text-xs text-gray-500">To enable invisible spam protection, register your site on Google reCAPTCHA v3. Leave both keys blank to disable.</p>
                         </div>
                         <button type="submit" class="bg-black text-white px-6 py-2 rounded shadow hover:bg-gray-800 transition">Save Integrations</button>
                         <span id="integrations-message" class="ml-3 text-sm text-green-600 hidden">Saved successfully!</span>

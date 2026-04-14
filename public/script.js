@@ -64,11 +64,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData(form);
                 const payload = Object.fromEntries(formData.entries());
                 
-                const response = await fetch('/api/inquiries', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const executeSubmission = async (token = null) => {
+                    if (token) payload.recaptcha_token = token;
+                    return await fetch('/api/inquiries', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                };
+
+                let response;
+                if (window.RECAPTCHA_SITE_KEY && typeof grecaptcha !== 'undefined') {
+                    response = await new Promise((resolve, reject) => {
+                        grecaptcha.ready(function() {
+                            grecaptcha.execute(window.RECAPTCHA_SITE_KEY, {action: 'submit'}).then(async function(token) {
+                                try { resolve(await executeSubmission(token)); } catch(e) { reject(e); }
+                            }).catch(reject);
+                        });
+                    });
+                } else {
+                    response = await executeSubmission();
+                }
                 
                 if (response.ok) {
                     form.reset();
@@ -244,8 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function injectAnalytics() {
-    fetch('/api/public/analytics').then(r => r.json()).then(data => {
+function loadConfig() {
+    fetch('/api/public/config').then(r => r.json()).then(data => {
+        // Analytics
         if (data.tracking_id && data.tracking_id.trim() !== '') {
             const script1 = document.createElement('script');
             script1.async = true;
@@ -257,6 +274,15 @@ function injectAnalytics() {
             document.head.appendChild(script2);
             console.log("Analytics engine active.");
         }
-    }).catch(e => {});
+        
+        // reCAPTCHA
+        if (data.recaptcha_site_key && data.recaptcha_site_key.trim() !== '') {
+            window.RECAPTCHA_SITE_KEY = data.recaptcha_site_key;
+            const script = document.createElement('script');
+            script.src = `https://www.google.com/recaptcha/api.js?render=${data.recaptcha_site_key}`;
+            document.head.appendChild(script);
+            console.log("reCAPTCHA protection active.");
+        }
+    }).catch(e => console.error("Could not load public configuration:", e));
 }
-injectAnalytics();
+loadConfig();
