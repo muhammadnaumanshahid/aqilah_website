@@ -562,8 +562,7 @@ app.get('/api/media', authenticateToken, (req, res) => {
         }
     });
     
-    // Pass the absolute target directory back for debugging on cPanel
-    res.json({ folders, files, serverPath: targetDir });
+    res.json({ folders, files });
 });
 
 app.post('/api/media/folder', authenticateToken, (req, res) => {
@@ -578,6 +577,28 @@ app.post('/api/media/folder', authenticateToken, (req, res) => {
     
     fs.mkdirSync(targetDir, { recursive: true });
     res.json({ success: true });
+});
+
+app.post('/api/media/item/delete', authenticateToken, (req, res) => {
+    let reqDir = req.body.dir || '';
+    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    const itemName = req.body.name;
+    if (!itemName) return res.status(400).json({ error: 'Item name required' });
+    
+    // Prevent navigating upwards out of public/images
+    if (itemName.includes('..') || reqDir.includes('..')) return res.status(403).json({ error: 'Forbidden' });
+
+    const targetPath = path.resolve(path.join(imagesRoot, reqDir, itemName));
+    if (!targetPath.startsWith(imagesRoot)) return res.status(403).json({ error: 'Forbidden' });
+    if (!fs.existsSync(targetPath)) return res.status(404).json({ error: 'Item not found' });
+    
+    try {
+        fs.rmSync(targetPath, { recursive: true, force: true });
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to delete item' });
+    }
 });
 
 app.post('/api/media/upload', authenticateToken, (req, res) => {
@@ -629,18 +650,6 @@ app.get('/sitemap.xml', (req, res) => {
 // Catch-all route to serve the SPA Admin if it gets requested directly
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
-});
-
-// --- DIAGNOSTIC ENDPOINT ---
-app.get('/api/diagnostics', (req, res) => {
-    res.json({
-        nodeProcessCwd: process.cwd(),
-        serverDirname: __dirname,
-        computedImagesRoot: imagesRoot,
-        envCustomPath: process.env.IMAGES_PATH || 'Not set',
-        imagesRootExistsOnDisk: fs.existsSync(imagesRoot),
-        imagesRootItems: fs.existsSync(imagesRoot) ? fs.readdirSync(imagesRoot).slice(0, 5) : 'Folder missing'
-    });
 });
 
 app.listen(PORT, () => {

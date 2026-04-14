@@ -708,7 +708,10 @@ document.addEventListener('DOMContentLoaded', () => {
         foldersList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             gridHtml += `
-                <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition mgt-folder" data-path="${fPath}">
+                <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition relative group mgt-folder" data-path="${fPath}">
+                    <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="folder" data-name="${f}" title="Delete Folder">
+                        <i class="fas fa-trash-alt text-xs"></i>
+                    </button>
                     <i class="fas fa-folder text-5xl text-yellow-400 mb-2"></i>
                     <p class="text-sm truncate font-medium text-gray-800">${f}</p>
                 </div>`;
@@ -719,12 +722,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullUrl = '/images/' + fPath;
             gridHtml += `
                 <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between">
+                    <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="file" data-name="${f}" title="Delete File">
+                        <i class="fas fa-trash-alt text-xs"></i>
+                    </button>
                     <div class="h-32 w-full bg-gray-100 flex items-center justify-center rounded overflow-hidden mb-2 relative">
                         <img src="${fullUrl}" class="max-h-full max-w-full object-contain">
                     </div>
                     <p class="text-[11px] truncate font-medium text-gray-700 select-all" title="${f}">${f}</p>
                     <p class="text-[9px] truncate text-gray-400 mt-1 select-all" title="${fullUrl}">${fullUrl}</p>
-                    <a href="${fullUrl}" target="_blank" class="absolute inset-0 z-10 hidden group-hover:block" title="View Image"></a>
+                    <a href="${fullUrl}" target="_blank" class="absolute inset-0 z-10 hidden group-hover:block pointer-events-none" title="View Image"></a>
                 </div>`;
         });
         
@@ -738,11 +744,36 @@ document.addEventListener('DOMContentLoaded', () => {
         managementGrid.innerHTML = gridHtml;
         const defaultPath = currentManagementPath ? `/images/${currentManagementPath}` : '/images';
         if (managementPathDisplay) {
-            managementPathDisplay.innerHTML = `<span class="font-bold text-gray-500 mr-2">VIRTUAL:</span> ${defaultPath} <span class="mx-3 text-gray-300">|</span> <span class="font-bold text-red-500 mr-2">SERVER:</span> <span class="select-all">${data.serverPath || 'Unknown'}</span>`;
+            managementPathDisplay.textContent = defaultPath;
         }
         
         document.querySelectorAll('.mgt-folder').forEach(el => {
-            el.addEventListener('click', () => loadManagementMedia(el.dataset.path));
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.mgt-delete')) return; // Ignore if clicking delete
+                loadManagementMedia(el.dataset.path);
+            });
+        });
+
+        document.querySelectorAll('.mgt-delete').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const type = btn.dataset.type;
+                const name = btn.dataset.name;
+                if (!confirm(`Are you sure you want to completely delete this ${type}?`)) return;
+
+                const delRes = await _fetch('/api/media/item/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dir: currentManagementPath, name })
+                });
+
+                if (delRes.ok) {
+                    loadManagementMedia(currentManagementPath);
+                } else {
+                    const err = await delRes.json();
+                    alert('Failed to delete: ' + (err.error || 'Unknown error'));
+                }
+            });
         });
     }
 
