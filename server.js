@@ -49,8 +49,8 @@ const inquiryLimiter = rateLimit({
     message: { error: 'Too many submissions from this connection. Please try again later.' }
 });
 
-// Ensure images directory exists. Defaults to local public folder, but can be overridden by cPanel environment variables
-const imagesRoot = process.env.IMAGES_PATH ? path.resolve(process.env.IMAGES_PATH) : path.join(__dirname, 'public', 'images');
+// Ensure images directory exists. Hard-locked to the application folder to prevent cPanel trailing/relative ghost ENV injections
+const imagesRoot = path.join(__dirname, 'public', 'images');
 if (!fs.existsSync(imagesRoot)) {
     try { fs.mkdirSync(imagesRoot, { recursive: true }); } catch (e) { console.error("Could not create images root:", e); }
 }
