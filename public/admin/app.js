@@ -661,7 +661,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STANDALONE MEDIA MANAGEMENT LOGIC ---
     const managementGrid = document.getElementById('management-grid');
     const managementBreadcrumbs = document.getElementById('management-breadcrumbs');
-    const managementPathDisplay = document.getElementById('management-path-display');
     const managementUploadInput = document.getElementById('management-upload-input');
     const managementUploadOverlay = document.getElementById('management-upload-overlay');
     let currentManagementPath = '';
@@ -742,10 +741,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         managementGrid.innerHTML = gridHtml;
-        const defaultPath = currentManagementPath ? `/images/${currentManagementPath}` : '/images';
-        if (managementPathDisplay) {
-            managementPathDisplay.textContent = defaultPath;
-        }
         
         document.querySelectorAll('.mgt-folder').forEach(el => {
             el.addEventListener('click', (e) => {
