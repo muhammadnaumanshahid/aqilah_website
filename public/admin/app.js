@@ -800,6 +800,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Failed to delete: ' + (err.error || 'Unknown error'));
                 }
             });
+        });
+
         document.querySelectorAll('.mgt-rename').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
