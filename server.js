@@ -629,6 +629,32 @@ app.post('/api/media/items/delete', authenticateToken, (req, res) => {
     }
 });
 
+app.post('/api/media/rename', authenticateToken, (req, res) => {
+    let reqDir = req.body.dir || '';
+    if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+    const { oldName, newName } = req.body;
+    
+    if (!oldName || !newName) return res.status(400).json({ error: 'Both current and new names are required' });
+    if (reqDir.includes('..') || oldName.includes('..') || newName.includes('..') || newName.includes('/')) {
+        return res.status(403).json({ error: 'Forbidden characters in name' });
+    }
+
+    const oldPath = path.resolve(path.join(imagesRoot, reqDir, oldName));
+    const newPath = path.resolve(path.join(imagesRoot, reqDir, newName));
+    
+    if (!oldPath.startsWith(imagesRoot) || !newPath.startsWith(imagesRoot)) return res.status(403).json({ error: 'Forbidden traversal' });
+    if (!fs.existsSync(oldPath)) return res.status(404).json({ error: 'Original item not found' });
+    if (fs.existsSync(newPath)) return res.status(400).json({ error: 'Destination name already exists in this folder' });
+    
+    try {
+        fs.renameSync(oldPath, newPath);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Rename error:", e);
+        res.status(500).json({ error: 'Permission denied or OS lock' });
+    }
+});
+
 app.post('/api/media/upload', authenticateToken, (req, res) => {
     mediaUpload.array('files', 20)(req, res, function (err) {
         if (err instanceof multer.MulterError) {

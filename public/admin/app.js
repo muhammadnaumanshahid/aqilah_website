@@ -717,6 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
             gridHtml += `
                 <div class="bg-white border rounded p-4 text-center cursor-pointer hover:shadow-md transition relative group mgt-folder" data-path="${fPath}">
                     <input type="checkbox" class="absolute top-2 left-2 z-20 mgt-bulk-check w-4 h-4 cursor-pointer" data-name="${f}">
+                    <button class="absolute top-2 right-8 bg-blue-100 text-blue-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-rename" data-name="${f}" title="Rename Folder">
+                        <i class="fas fa-pen text-xs"></i>
+                    </button>
                     <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="folder" data-name="${f}" title="Delete Folder">
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
@@ -731,6 +734,9 @@ document.addEventListener('DOMContentLoaded', () => {
             gridHtml += `
                 <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between hidden-a-tag-fix-target">
                     <input type="checkbox" class="absolute top-2 left-2 z-20 mgt-bulk-check w-4 h-4 cursor-pointer" data-name="${f}">
+                    <button class="absolute top-2 right-8 bg-blue-100 text-blue-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-rename" data-name="${f}" title="Rename File">
+                        <i class="fas fa-pen text-xs"></i>
+                    </button>
                     <button class="absolute top-2 right-2 bg-red-100 text-red-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-delete" data-type="file" data-name="${f}" title="Delete File">
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
@@ -769,7 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.mgt-folder').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target.closest('.mgt-delete') || e.target.closest('.mgt-bulk-check')) return;
+                if (e.target.closest('.mgt-delete') || e.target.closest('.mgt-bulk-check') || e.target.closest('.mgt-rename')) return;
                 loadManagementMedia(el.dataset.path);
             });
         });
@@ -792,6 +798,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const err = await delRes.json();
                     alert('Failed to delete: ' + (err.error || 'Unknown error'));
+                }
+            });
+        document.querySelectorAll('.mgt-rename').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const oldName = btn.dataset.name;
+                const newName = prompt(`Rename '${oldName}' to:`, oldName);
+                if (!newName || newName.trim() === '' || newName === oldName) return;
+
+                if (newName.includes('/')) return alert("Folder/File names cannot contain slashes.");
+
+                const renRes = await _fetch('/api/media/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dir: currentManagementPath, oldName, newName })
+                });
+
+                if (renRes.ok) {
+                    loadManagementMedia(currentManagementPath);
+                } else {
+                    const err = await renRes.json();
+                    alert('Failed to rename: ' + (err.error || 'Unknown error'));
                 }
             });
         });
