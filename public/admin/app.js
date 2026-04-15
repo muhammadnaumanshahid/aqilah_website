@@ -116,15 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OVERVIEW ---
     async function loadOverview() {
-        const [projRes, inqRes] = await Promise.all([
-            _fetch('/api/projects').then(r => r.json()),
-            _fetch('/api/inquiries').then(r => r.json())
-        ]);
-        document.getElementById('overview-projects-count').textContent = projRes.length || 0;
-        document.getElementById('overview-inquiries-count').textContent = inqRes.length || 0;
-        
-        renderChart(inqRes);
-        loadAnalytics();
+        try {
+            const [projRes, inqRes] = await Promise.all([
+                _fetch('/api/projects').then(r => r.ok ? r.json() : []),
+                _fetch('/api/inquiries').then(r => r.ok ? r.json() : [])
+            ]);
+            document.getElementById('overview-projects-count').textContent = projRes.length || 0;
+            document.getElementById('overview-inquiries-count').textContent = inqRes.length || 0;
+            
+            renderChart(inqRes);
+            loadAnalytics();
+        } catch (e) {
+            console.error('Overview parsing failure:', e);
+            document.getElementById('overview-projects-count').textContent = '-';
+            document.getElementById('overview-inquiries-count').textContent = '-';
+        }
     }
     
     async function loadAnalytics() {
