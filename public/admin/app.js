@@ -331,17 +331,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (galleryManager) {
         galleryManager.innerHTML = '';
         for(let i=0; i<10; i++) {
-            galleryManager.innerHTML += '<div class="border p-2 rounded bg-gray-50">' +
-                '<label class="block font-medium mb-1 text-xs">Image ' + (i+1) + '</label>' +
-                '<img id="gallery_preview_' + i + '" src="" class="h-16 w-auto object-cover rounded mb-2 hidden border">' +
-                '<div class="flex gap-1 mb-2">' +
-                    '<input type="file" id="gallery_file_' + i + '" accept="image/*" class="w-full text-[10px] border p-1 rounded">' +
-                    '<button type="button" class="bg-gray-200 px-2 py-1 rounded text-[10px] whitespace-nowrap hover:bg-gray-300 transition select-media-btn" data-target-existing="gallery_existing_' + i + '" data-target-preview="gallery_preview_' + i + '" data-target-file="gallery_file_' + i + '"><i class="fas fa-folder-open"></i> Media</button>' +
-                '</div>' +
-                '<input type="text" id="gallery_caption_' + i + '" placeholder="Caption ' + (i+1) + '" class="w-full border p-1 rounded text-xs">' +
-                '<input type="hidden" id="gallery_existing_' + i + '">' +
-            '</div>';
+            galleryManager.innerHTML += `<div class="border p-3 rounded bg-gray-50" id="gallery_slot_${i}">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block font-medium text-xs text-gray-600">Image ${i+1}</label>
+                    <span id="gallery_status_${i}" class="text-[10px] text-gray-400">No image set</span>
+                </div>
+                <img id="gallery_preview_${i}" src="" class="h-20 w-full object-cover rounded mb-2 hidden border border-gray-200">
+                <div class="flex gap-1 mb-2">
+                    <input type="file" id="gallery_file_${i}" accept="image/*" class="w-full text-[10px] border p-1 rounded bg-white">
+                    <button type="button" class="bg-gray-200 px-2 py-1 rounded text-[10px] whitespace-nowrap hover:bg-gray-300 transition select-media-btn" data-target-existing="gallery_existing_${i}" data-target-preview="gallery_preview_${i}" data-target-file="gallery_file_${i}"><i class="fas fa-folder-open"></i> Browse</button>
+                    <button type="button" class="bg-red-100 text-red-500 px-2 py-1 rounded text-[10px] whitespace-nowrap hover:bg-red-200 transition gallery-clear-btn" data-idx="${i}" title="Remove image"><i class="fas fa-times"></i></button>
+                </div>
+                <input type="text" id="gallery_caption_${i}" placeholder="Caption (optional)" class="w-full border p-1 rounded text-xs bg-white">
+                <input type="hidden" id="gallery_existing_${i}">
+            </div>`;
         }
+
+        // Gallery clear buttons
+        document.querySelectorAll('.gallery-clear-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const i = btn.dataset.idx;
+                document.getElementById(`gallery_existing_${i}`).value = '';
+                document.getElementById(`gallery_file_${i}`).value = '';
+                const prev = document.getElementById(`gallery_preview_${i}`);
+                prev.src = ''; prev.classList.add('hidden');
+                document.getElementById(`gallery_status_${i}`).textContent = 'No image set';
+                document.getElementById(`gallery_status_${i}`).className = 'text-[10px] text-gray-400';
+            });
+        });
     }
 
     document.getElementById('add-project-btn').addEventListener('click', () => {
@@ -511,19 +528,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             for (let i=0; i<10; i++) {
                 const prev = document.getElementById('gallery_preview_' + i);
+                const statusEl = document.getElementById('gallery_status_' + i);
                 if (c.gallery && c.gallery[i]) {
                     document.getElementById('gallery_caption_' + i).value = c.gallery[i].caption || '';
                     document.getElementById('gallery_existing_' + i).value = c.gallery[i].image || '';
                     if (c.gallery[i].image && prev) {
                         prev.src = c.gallery[i].image;
                         prev.classList.remove('hidden');
+                        if (statusEl) { statusEl.textContent = 'Image saved ✓'; statusEl.className = 'text-[10px] text-green-600 font-medium'; }
                     } else if (prev) {
                         prev.classList.add('hidden');
+                        if (statusEl) { statusEl.textContent = 'No image set'; statusEl.className = 'text-[10px] text-gray-400'; }
                     }
                 } else {
                     document.getElementById('gallery_caption_' + i).value = '';
                     document.getElementById('gallery_existing_' + i).value = '';
                     if (prev) prev.classList.add('hidden');
+                    if (statusEl) { statusEl.textContent = 'No image set'; statusEl.className = 'text-[10px] text-gray-400'; }
                 }
             }
         } catch(e) {
@@ -1038,6 +1059,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (previewImg) { previewImg.src = url; previewImg.classList.remove('hidden'); }
                 if (fileInput) fileInput.value = ''; // clear local file if server file selected
                 
+                // Update gallery status badge if target is a gallery slot
+                if (mediaTargetExisting && mediaTargetExisting.startsWith('gallery_existing_')) {
+                    const idx = mediaTargetExisting.replace('gallery_existing_', '');
+                    const statusEl = document.getElementById('gallery_status_' + idx);
+                    if (statusEl) { statusEl.textContent = 'Image saved ✓'; statusEl.className = 'text-[10px] text-green-600 font-medium'; }
+                }
+                
                 mediaModal.classList.add('hidden');
             });
         });
@@ -1058,10 +1086,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('media-upload-input')?.addEventListener('change', async (e) => {
         if (!e.target.files.length) return;
         const fm = new FormData();
-        fm.append('dir', currentMediaPath);
         for(let f of e.target.files) fm.append('files', f);
         
-        const res = await _fetch('/api/media/upload', { method: 'POST', body: fm });
+        // Use query param for dir — req.body.dir is not available during multer processing
+        const uploadUrl = `/api/media/upload?dir=${encodeURIComponent(currentMediaPath)}`;
+        const res = await _fetch(uploadUrl, { method: 'POST', body: fm });
         e.target.value = '';
         if (res.ok) {
             loadMedia(currentMediaPath);
