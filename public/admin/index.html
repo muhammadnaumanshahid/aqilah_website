@@ -440,6 +440,33 @@
                         <span id="integrations-message" class="ml-3 text-sm text-green-600 hidden">Saved successfully!</span>
                     </form>
                 </div>
+
+                <!-- IMAGE DIAGNOSTICS PANEL -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-orange-200 max-w-3xl mt-6">
+                    <h3 class="text-xl font-medium mb-2 flex items-center gap-2">
+                        <i class="fas fa-stethoscope text-orange-500"></i> Image Path Diagnostics
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Use this tool if images are not displaying on the frontend. It scans every image path stored in the database and checks whether the file actually exists on the server's disk.</p>
+                    <div class="flex gap-3 mb-4 flex-wrap">
+                        <button id="diag-scan-btn" class="bg-orange-500 text-white px-5 py-2 rounded hover:bg-orange-600 transition text-sm font-medium">
+                            <i class="fas fa-search mr-2"></i> Scan Image Paths
+                        </button>
+                        <button id="diag-fix-btn" class="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition text-sm font-medium hidden">
+                            <i class="fas fa-wrench mr-2"></i> Auto-Fix Broken Paths
+                        </button>
+                    </div>
+                    <div id="diag-results" class="hidden">
+                        <div id="diag-summary" class="text-sm font-medium mb-3 p-3 rounded-lg bg-gray-50 border"></div>
+                        <div id="diag-broken-list" class="hidden">
+                            <p class="text-sm font-semibold text-red-600 mb-2">❌ Broken Paths:</p>
+                            <ul id="diag-broken-ul" class="text-xs text-red-700 bg-red-50 p-3 rounded border border-red-200 space-y-1 max-h-48 overflow-y-auto font-mono"></ul>
+                        </div>
+                        <div id="diag-files-list" class="mt-4 hidden">
+                            <p class="text-sm font-semibold text-gray-600 mb-2">📁 Files on Server Disk:</p>
+                            <ul id="diag-files-ul" class="text-xs text-gray-600 bg-gray-50 p-3 rounded border space-y-1 max-h-48 overflow-y-auto font-mono"></ul>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </main>

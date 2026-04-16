@@ -700,6 +700,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- IMAGE DIAGNOSTICS ---
+    const diagScanBtn = document.getElementById('diag-scan-btn');
+    const diagFixBtn = document.getElementById('diag-fix-btn');
+
+    if (diagScanBtn) {
+        diagScanBtn.addEventListener('click', async () => {
+            diagScanBtn.textContent = 'Scanning...';
+            diagScanBtn.disabled = true;
+            
+            const res = await _fetch('/api/diagnostics/images');
+            const data = await res.json();
+            
+            diagScanBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Scan Image Paths';
+            diagScanBtn.disabled = false;
+            
+            const results = document.getElementById('diag-results');
+            const summary = document.getElementById('diag-summary');
+            const brokenList = document.getElementById('diag-broken-list');
+            const brokenUl = document.getElementById('diag-broken-ul');
+            const filesList = document.getElementById('diag-files-list');
+            const filesUl = document.getElementById('diag-files-ul');
+            
+            results.classList.remove('hidden');
+            
+            const hasBroken = data.broken && data.broken.length > 0;
+            summary.textContent = data.summary;
+            summary.className = `text-sm font-medium mb-3 p-3 rounded-lg border ${hasBroken ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
+            
+            if (hasBroken) {
+                brokenList.classList.remove('hidden');
+                brokenUl.innerHTML = data.broken.map(b => `<li title="${b.project} — ${b.type}"><strong>${b.project}</strong> [${b.type}]: ${b.path}</li>`).join('');
+                diagFixBtn.classList.remove('hidden');
+            } else {
+                brokenList.classList.add('hidden');
+                diagFixBtn.classList.add('hidden');
+            }
+            
+            // Always show disk files
+            filesList.classList.remove('hidden');
+            filesUl.innerHTML = (data.disk_files || []).map(f => `<li>${f}</li>`).join('') || '<li class="text-gray-400">No files found</li>';
+        });
+    }
+
+    if (diagFixBtn) {
+        diagFixBtn.addEventListener('click', async () => {
+            if (!confirm('This will update the database to fix broken image paths by matching filenames. Continue?')) return;
+            diagFixBtn.textContent = 'Fixing...';
+            diagFixBtn.disabled = true;
+            
+            const res = await _fetch('/api/diagnostics/fix-paths', { method: 'POST' });
+            const data = await res.json();
+            
+            diagFixBtn.innerHTML = '<i class="fas fa-wrench mr-2"></i> Auto-Fix Broken Paths';
+            diagFixBtn.disabled = false;
+            
+            alert(data.message || `Fixed ${data.fixes_applied} path(s). Please re-scan to confirm.`);
+            diagScanBtn?.click(); // Re-run scan
+        });
+    }
+
     // --- STANDALONE MEDIA MANAGEMENT LOGIC ---
     const managementGrid = document.getElementById('management-grid');
     const managementBreadcrumbs = document.getElementById('management-breadcrumbs');

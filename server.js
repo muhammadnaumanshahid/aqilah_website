@@ -33,6 +33,9 @@ if (!JWT_SECRET) {
 // Security Headers & Rates
 app.use(helmet({ 
     contentSecurityPolicy: false,
+    // cross-origin: allows LiteSpeed/cPanel proxy to serve images from the Node app without blocking
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
@@ -369,6 +372,133 @@ app.delete('/api/projects/:id', authenticateToken, (req, res) => {
     db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Project deleted' });
+    });
+});
+
+// --- IMAGE DIAGNOSTICS & AUTO-FIX (Admin only) ---
+// GET /api/diagnostics/images — shows which DB image paths are broken on this server
+app.get('/api/diagnostics/images', authenticateToken, (req, res) => {
+    db.all('SELECT id, title, main_image, content FROM projects', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const results = [];
+        rows.forEach(p => {
+            // Check main_image
+            const mainResolved = p.main_image ? path.join(__dirname, 'public', p.main_image) : null;
+            const mainExists = mainResolved ? fs.existsSync(mainResolved) : false;
+            results.push({ project: p.title, type: 'main_image', path: p.main_image, exists: mainExists });
+            
+            // Check gallery images
+            try {
+                const c = JSON.parse(p.content || '{}');
+                (c.gallery || []).forEach((g, i) => {
+                    if (!g.image) return;
+                    const gResolved = path.join(__dirname, 'public', g.image);
+                    const gExists = fs.existsSync(gResolved);
+                    results.push({ project: p.title, type: `gallery[${i}]`, path: g.image, exists: gExists });
+                });
+            } catch (e) {}
+        });
+        
+        // Also list all files on disk
+        const diskFiles = [];
+        function walkDir(dir, base) {
+            try {
+                fs.readdirSync(dir, { withFileTypes: true }).forEach(item => {
+                    if (item.name.startsWith('.')) return;
+                    const full = path.join(dir, item.name);
+                    if (item.isDirectory()) walkDir(full, base);
+                    else diskFiles.push('/images/' + path.relative(base, full));
+                });
+            } catch(e) {}
+        }
+        walkDir(imagesRoot, imagesRoot);
+        
+        const broken = results.filter(r => !r.exists);
+        res.json({ 
+            summary: `${results.length} paths checked, ${broken.length} broken, ${results.length - broken.length} OK`,
+            broken,
+            ok: results.filter(r => r.exists),
+            disk_files: diskFiles
+        });
+    });
+});
+
+// POST /api/diagnostics/fix-paths — attempts to auto-repair broken paths by filename match
+app.post('/api/diagnostics/fix-paths', authenticateToken, (req, res) => {
+    // Build a flat filename-to-path index of all files on disk
+    const fileIndex = {};
+    function walkDir(dir, base) {
+        try {
+            fs.readdirSync(dir, { withFileTypes: true }).forEach(item => {
+                if (item.name.startsWith('.')) return;
+                const full = path.join(dir, item.name);
+                if (item.isDirectory()) walkDir(full, base);
+                else fileIndex[item.name.toLowerCase()] = '/images/' + path.relative(base, full);
+            });
+        } catch(e) {}
+    }
+    walkDir(imagesRoot, imagesRoot);
+    
+    db.all('SELECT id, main_image, content FROM projects', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        let fixCount = 0;
+        const ops = [];
+        
+        rows.forEach(p => {
+            let changed = false;
+            let newMain = p.main_image;
+            
+            // Fix main_image
+            if (p.main_image) {
+                const mainDisk = path.join(__dirname, 'public', p.main_image);
+                if (!fs.existsSync(mainDisk)) {
+                    const filename = path.basename(p.main_image).toLowerCase();
+                    if (fileIndex[filename]) {
+                        newMain = fileIndex[filename];
+                        changed = true;
+                        fixCount++;
+                    }
+                }
+            }
+            
+            // Fix gallery images
+            let newContent = p.content;
+            try {
+                const c = JSON.parse(p.content || '{}');
+                let galleryChanged = false;
+                (c.gallery || []).forEach(g => {
+                    if (!g.image) return;
+                    const gDisk = path.join(__dirname, 'public', g.image);
+                    if (!fs.existsSync(gDisk)) {
+                        const filename = path.basename(g.image).toLowerCase();
+                        if (fileIndex[filename]) {
+                            g.image = fileIndex[filename];
+                            galleryChanged = true;
+                            fixCount++;
+                        }
+                    }
+                });
+                if (galleryChanged) {
+                    newContent = JSON.stringify(c);
+                    changed = true;
+                }
+            } catch(e) {}
+            
+            if (changed) {
+                ops.push(new Promise((resolve, reject) => {
+                    db.run('UPDATE projects SET main_image = ?, content = ? WHERE id = ?',
+                        [newMain, newContent, p.id],
+                        err => err ? reject(err) : resolve()
+                    );
+                }));
+            }
+        });
+        
+        Promise.all(ops).then(() => {
+            res.json({ success: true, fixes_applied: fixCount, message: `Fixed ${fixCount} broken image paths.` });
+        }).catch(e => res.status(500).json({ error: e.message }));
     });
 });
 
