@@ -372,9 +372,10 @@ nav a:not(.btn-primary):hover::after {
 
 .project-image img {
     width: 100%;
-    height: 600px;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
     transition: transform 0.8s ease;
+    display: block;
 }
 
 .project-item:hover .project-image img {
@@ -614,6 +615,10 @@ footer p {
     grid-template-columns: repeat(2, 1fr);
     gap: 3rem;
 }
+@media (max-width: 900px) {
+    .portfolio-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .portfolio-grid .project-image img { aspect-ratio: 16 / 9; height: auto; }
+}
 
 /* Project Detail Layout */
 .project-details {
@@ -642,9 +647,10 @@ footer p {
     .detail-gallery {
         grid-template-columns: 1fr 1fr;
     }
-    .detail-gallery img:nth-child(n) {
-        height: 600px;
+    .detail-gallery img {
+        aspect-ratio: 3 / 2;
         object-fit: cover;
+        width: 100%;
     }
 }
 
@@ -850,8 +856,8 @@ footer p {
         height: auto;
     }
     
-    /* Specific overrides for project images fixed height on mobile */
-    .project-image img { height: 400px; }
+    /* Specific overrides for project images on mobile: use aspect-ratio instead of fixed height */
+    .project-image img { aspect-ratio: 3 / 2; height: auto; }
     
     .footer-content { gap: 1.5rem; }
 }
@@ -863,7 +869,7 @@ footer p {
     .section-title { font-size: 1.8rem; }
     
     .service-card { padding: 3rem 1.5rem; }
-    .project-image img { height: 300px; }
+    .project-image img { aspect-ratio: 4 / 3; height: auto; }
     .about, .services, .projects, .enquire, .video-section, .portfolio-grid {
         padding: 4rem 0;
     }
@@ -976,7 +982,7 @@ body.no-scroll {
    PROJECT CASE STUDY TEMPLATE (2026 ARCHITECTURE)
    ========================================================================= */
 
-/* Hero Header */
+/* Project Hero — disable parallax on iOS (background-attachment: fixed is broken on iOS Safari) */
 .project-hero {
     position: relative;
     height: 85vh;
@@ -989,6 +995,10 @@ body.no-scroll {
     background-color: #111;
     background-attachment: fixed;
     margin-bottom: 4rem;
+}
+@supports (-webkit-touch-callout: none) {
+    /* iOS Safari — remove fixed parallax, use scroll instead */
+    .project-hero { background-attachment: scroll; }
 }
 .project-hero::after {
     content: '';
@@ -1072,7 +1082,7 @@ body.no-scroll {
 /* Curated Gallery & Micro-captions */
 .curated-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: 3rem;
     margin-bottom: 8rem;
 }
@@ -1158,13 +1168,25 @@ body.project-page .navbar:not(.scrolled) .mobile-menu-btn span {
     background: #fff !important;
 }
 
-/* 2. Gallery Alignment Fix */
-.curated-gallery .gallery-item img {
-    height: 500px !important;
-    width: 100% !important;
-    object-fit: cover !important;
-    border-radius: 4px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
+/* 2. Gallery Alignment Fix — desktop only */
+@media (min-width: 768px) {
+    .curated-gallery .gallery-item img {
+        height: 500px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+}
+/* Ensure mobile gallery images scale naturally */
+@media (max-width: 767px) {
+    .curated-gallery .gallery-item img {
+        height: auto;
+        aspect-ratio: 4 / 3;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+    }
 }
 
 /* 3. Excessive Gaps Fix */

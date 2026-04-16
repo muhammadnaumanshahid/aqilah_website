@@ -417,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProjects() {
         const res = await _fetch('/api/projects');
+        if (!res.ok) return;
         const projects = await res.json();
         const tbody = document.getElementById('projects-table-body');
         tbody.innerHTML = '';
@@ -478,10 +479,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function editProject(id, projects) {
         const project = projects.find(p => p.id == id);
         if (!project) return;
+        projectForm.reset();
         document.getElementById('project-id').value = project.id;
         document.getElementById('project-title').value = project.title;
         document.getElementById('project-location').value = project.location;
-        document.getElementById('project-image').value = ''; 
+        document.getElementById('project-image').value = '';
         document.getElementById('main_existing_image').value = project.main_image || '';
         
         const mainPrev = document.getElementById('main-image-preview');
@@ -494,10 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 mainPrev.classList.add('hidden');
             }
         }
-        
-        projectForm.reset(); 
-        document.getElementById('project-title').value = project.title;
-        document.getElementById('project-location').value = project.location;
         
         try {
             const c = JSON.parse(project.content);
@@ -611,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 i.name, i.email, i.phone, i.property_type, i.budget, i.timeline, i.status
             ]);
             
-            const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const csvContent = [headers.join(','), ...rows.map(e => e.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
@@ -748,8 +746,13 @@ document.addEventListener('DOMContentLoaded', () => {
         filesList.forEach(f => {
             const fPath = pathStr ? `${pathStr}/${f}` : f;
             const fullUrl = '/images/' + fPath;
+            const ext = f.split('.').pop().toLowerCase();
+            const isVideo = ['mp4', 'webm', 'mov'].includes(ext);
+            const mediaEl = isVideo
+                ? `<video src="${fullUrl}" class="max-h-full max-w-full object-contain" muted playsinline preload="metadata" title="${f}"></video>`
+                : `<img src="${fullUrl}" class="max-h-full max-w-full object-contain" loading="lazy">`;
             gridHtml += `
-                <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between hidden-a-tag-fix-target">
+                <div class="bg-white border rounded p-2 text-center hover:shadow-md transition relative group select-none flex flex-col justify-between">
                     <input type="checkbox" class="absolute top-2 left-2 z-20 mgt-bulk-check w-4 h-4 cursor-pointer" data-name="${f}">
                     <button class="absolute top-2 right-8 bg-blue-100 text-blue-500 rounded p-1 opacity-0 group-hover:opacity-100 transition z-20 mgt-rename" data-name="${f}" title="Rename File">
                         <i class="fas fa-pen text-xs"></i>
@@ -758,11 +761,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
                     <div class="h-32 w-full bg-gray-100 flex items-center justify-center rounded overflow-hidden mb-2 relative">
-                        <img src="${fullUrl}" class="max-h-full max-w-full object-contain">
+                        ${mediaEl}
                     </div>
                     <p class="text-[11px] truncate font-medium text-gray-700 select-all" title="${f}">${f}</p>
                     <p class="text-[9px] truncate text-gray-400 mt-1 select-all" title="${fullUrl}">${fullUrl}</p>
-                    <a href="${fullUrl}" target="_blank" class="absolute inset-0 z-10 hidden group-hover:block pointer-events-none" title="View Image"></a>
                 </div>`;
         });
         
@@ -804,11 +806,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = btn.dataset.name;
                 if (!confirm(`Are you sure you want to completely delete this ${type}?`)) return;
 
+                managementUploadOverlay.classList.remove('hidden');
                 const delRes = await _fetch('/api/media/item/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ dir: currentManagementPath, name })
                 });
+                managementUploadOverlay.classList.add('hidden');
 
                 if (delRes.ok) {
                     loadManagementMedia(currentManagementPath);
@@ -892,13 +896,14 @@ document.addEventListener('DOMContentLoaded', () => {
             managementUploadOverlay.classList.remove('hidden');
             
             const formData = new FormData();
-            formData.append('dir', currentManagementPath);
             for (let i = 0; i < managementUploadInput.files.length; i++) {
                 formData.append('files', managementUploadInput.files[i]);
             }
             
             try {
-                const res = await _fetch('/api/media/upload', {
+                // Append dir as query param — req.body is unavailable during multer destination resolution
+                const uploadUrl = `/api/media/upload?dir=${encodeURIComponent(currentManagementPath)}`;
+                const res = await _fetch(uploadUrl, {
                     method: 'POST',
                     body: formData
                 });

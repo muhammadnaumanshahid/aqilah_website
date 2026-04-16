@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg" href="images/logo.jpg">
+    <meta name="description" id="page-meta-description" content="Explore this interior design project by Home with Aqilah.">
     <link rel="stylesheet" href="style.css">
     <style>
         .project-hero {
@@ -88,6 +89,8 @@
                 
                 if(p) {
                     document.title = p.title + " | Home with Aqilah";
+                    const metaDesc = document.getElementById('page-meta-description');
+                    if (metaDesc) metaDesc.setAttribute('content', `${p.title} — Interior design project by Home with Aqilah. Located in ${p.location}.`);
                     const app = document.getElementById('dynamic-project-container');
                     
                     let c = {};

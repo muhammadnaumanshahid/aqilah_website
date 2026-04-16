@@ -122,8 +122,8 @@ app.use('/api', (req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/login', apiLimiter);
-app.use('/api/inquiries', apiLimiter); // general limiter for GET (admin)
-app.post('/api/inquiries', inquiryLimiter); // strict limiter for public form POST
+app.use('/api/inquiries', apiLimiter);
+app.post('/api/inquiries', inquiryLimiter); // strict rate limit for public form submissions only
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -517,8 +517,11 @@ app.delete('/api/inquiries/:id', authenticateToken, (req, res) => {
 
 const mediaStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        let reqDir = req.body.dir || '';
+        // IMPORTANT: req.body is NOT available during multer destination resolution.
+        // The frontend must append 'dir' as a query param (?dir=...) for this to work.
+        let reqDir = req.query.dir || '';
         if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
+        reqDir = reqDir.replace(/\.\./g, ''); // sanitize
         const targetDir = path.resolve(path.join(imagesRoot, reqDir));
         if (!targetDir.startsWith(imagesRoot)) {
             return cb(new Error('Invalid directory'), false);
@@ -534,7 +537,12 @@ const mediaStorage = multer.diskStorage({
         cb(null, safeName);
     }
 });
-const mediaUpload = multer({ storage: mediaStorage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
+const mediaFileFilter = (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime'];
+    if (allowedMimes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('INVALID_TYPE'), false);
+};
+const mediaUpload = multer({ storage: mediaStorage, fileFilter: mediaFileFilter, limits: { fileSize: 100 * 1024 * 1024 } });
 
 app.get('/api/media', authenticateToken, (req, res) => {
     // We use 'folder' instead of 'dir' because many basic WAF configs (like cPanel ModSecurity)
@@ -557,7 +565,9 @@ app.get('/api/media', authenticateToken, (req, res) => {
             folders.push(item.name);
         } else if (item.isFile()) {
             const ext = path.extname(item.name).toLowerCase();
-            if (['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'].includes(ext)) {
+            const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+            const videoExts = ['.mp4', '.webm', '.mov'];
+            if ([...imageExts, ...videoExts].includes(ext)) {
                 files.push(item.name);
             }
         }
@@ -569,7 +579,7 @@ app.get('/api/media', authenticateToken, (req, res) => {
 app.post('/api/media/folder', authenticateToken, (req, res) => {
     let reqDir = req.body.dir || '';
     if (reqDir.startsWith('/')) reqDir = reqDir.substring(1);
-    const name = (req.body.name || '').replace(/[^a-zA-Z0-9_\-\ ]/g, '');
+    const name = (req.body.name || '').replace(/[^a-zA-Z0-9_\-\ \.]/g, '');
     if (!name) return res.status(400).json({ error: 'Invalid folder name' });
     
     const targetDir = path.resolve(path.join(imagesRoot, reqDir, name));
