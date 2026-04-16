@@ -313,7 +313,8 @@ app.post('/api/projects', authenticateToken, upload.any(), (req, res) => {
     }
     content = JSON.stringify(parsedContent);
 
-    db.run('INSERT INTO projects (title, location, main_image, content) VALUES (?, ?, ?, ?)',
+    db.run(`INSERT INTO projects (title, location, main_image, content, sort_order) 
+            VALUES (?, ?, ?, ?, (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM projects))`,
         [title, location, main_image, content],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });

@@ -254,10 +254,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             </a>
                         `;
                     });
+                    
+                    // Restore scroll once DOM paints injected heights
+                    const savedScroll = sessionStorage.getItem('scrollPos_' + window.location.pathname);
+                    if (savedScroll) {
+                        requestAnimationFrame(() => window.scrollTo(0, parseInt(savedScroll, 10)));
+                    }
                 }
             })
             .catch(err => console.error("Could not fetch projects:", err));
+    } else {
+        // For non-portfolio pages, just restore natively on load
+        const savedScroll = sessionStorage.getItem('scrollPos_' + window.location.pathname);
+        if (savedScroll) requestAnimationFrame(() => window.scrollTo(0, parseInt(savedScroll, 10)));
     }
+});
+
+// Scroll Position Capture System
+window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('scrollPos_' + window.location.pathname, window.scrollY);
 });
 
 function loadConfig() {

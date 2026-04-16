@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const logoutBtn = document.getElementById('logout-btn');
     
+    // Scroll helpers
+    function saveTabScroll(tabId) {
+        sessionStorage.setItem('adminScroll_' + tabId, mainContent.scrollTop);
+    }
+    function restoreTabScroll(tabId) {
+        const pos = sessionStorage.getItem('adminScroll_' + tabId);
+        if (pos) requestAnimationFrame(() => { mainContent.scrollTop = parseInt(pos, 10); });
+    }
+
     // CHECK LOGIN STATUS
     if (token) {
         showDashboard();
@@ -21,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tempTab) tempTab.click(); 
             else loadOverview();
         } else {
-            loadOverview();
+            loadOverview().then(() => restoreTabScroll('overview-view'));
         }
     } else {
         loginScreen.classList.remove('hidden');
@@ -85,9 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // NAVIGATION
+    let currentAdminTab = localStorage.getItem('aqilahCurrentAdminTab') || 'overview-view';
+
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+
+            // Save scroll of the CURRENT tab before leaving
+            saveTabScroll(currentAdminTab);
             
             // Highlight active nav
             document.querySelectorAll('.nav-link').forEach(l => {
@@ -98,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.add('bg-gray-800', 'text-white');
 
             const targetId = link.getAttribute('data-target');
+            currentAdminTab = targetId;
             // Save state for hard reloads
             localStorage.setItem('aqilahCurrentAdminTab', targetId);
 
@@ -105,12 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.view-section').forEach(section => section.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
 
-            // Load logic
-            if (targetId === 'overview-view') loadOverview();
-            if (targetId === 'users-view') loadUsers();
-            if (targetId === 'projects-view') loadProjects();
-            if (targetId === 'inquiries-view') loadInquiries();
-            if (targetId === 'settings-view') loadSettings();
+            // Load logic — restore scroll after async load completes
+            const afterLoad = () => restoreTabScroll(targetId);
+            if (targetId === 'overview-view') { loadOverview().then(afterLoad); return; }
+            if (targetId === 'users-view') { loadUsers().then(afterLoad); return; }
+            if (targetId === 'projects-view') { loadProjects().then(afterLoad); return; }
+            if (targetId === 'inquiries-view') { loadInquiries().then(afterLoad); return; }
+            if (targetId === 'settings-view') { loadSettings().then(afterLoad); return; }
+            if (targetId === 'media-management-view') { afterLoad(); }
         });
     });
 
