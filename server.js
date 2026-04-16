@@ -375,9 +375,9 @@ app.delete('/api/projects/:id', authenticateToken, (req, res) => {
     });
 });
 
-// --- IMAGE DIAGNOSTICS & AUTO-FIX (Admin only) ---
-// GET /api/diagnostics/images — shows which DB image paths are broken on this server
-app.get('/api/diagnostics/images', authenticateToken, (req, res) => {
+// --- IMAGE HEALTH CHECK & AUTO-FIX (Admin only) ---
+// GET /api/admin/check-images — shows which DB image paths are broken on this server
+app.get('/api/admin/check-images', authenticateToken, (req, res) => {
     db.all('SELECT id, title, main_image, content FROM projects', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         
@@ -424,8 +424,8 @@ app.get('/api/diagnostics/images', authenticateToken, (req, res) => {
     });
 });
 
-// POST /api/diagnostics/fix-paths — attempts to auto-repair broken paths by filename match
-app.post('/api/diagnostics/fix-paths', authenticateToken, (req, res) => {
+// POST /api/admin/repair-images — attempts to auto-repair broken paths by filename match
+app.post('/api/admin/repair-images', authenticateToken, (req, res) => {
     // Build a flat filename-to-path index of all files on disk
     const fileIndex = {};
     function walkDir(dir, base) {

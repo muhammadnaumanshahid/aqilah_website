@@ -706,14 +706,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (diagScanBtn) {
         diagScanBtn.addEventListener('click', async () => {
-            diagScanBtn.textContent = 'Scanning...';
+            diagScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Scanning...';
             diagScanBtn.disabled = true;
-            
-            const res = await _fetch('/api/diagnostics/images');
-            const data = await res.json();
-            
-            diagScanBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Scan Image Paths';
-            diagScanBtn.disabled = false;
             
             const results = document.getElementById('diag-results');
             const summary = document.getElementById('diag-summary');
@@ -721,42 +715,76 @@ document.addEventListener('DOMContentLoaded', () => {
             const brokenUl = document.getElementById('diag-broken-ul');
             const filesList = document.getElementById('diag-files-list');
             const filesUl = document.getElementById('diag-files-ul');
-            
+
             results.classList.remove('hidden');
-            
-            const hasBroken = data.broken && data.broken.length > 0;
-            summary.textContent = data.summary;
-            summary.className = `text-sm font-medium mb-3 p-3 rounded-lg border ${hasBroken ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
-            
-            if (hasBroken) {
-                brokenList.classList.remove('hidden');
-                brokenUl.innerHTML = data.broken.map(b => `<li title="${b.project} — ${b.type}"><strong>${b.project}</strong> [${b.type}]: ${b.path}</li>`).join('');
-                diagFixBtn.classList.remove('hidden');
-            } else {
-                brokenList.classList.add('hidden');
-                diagFixBtn.classList.add('hidden');
+            summary.textContent = 'Scanning...';
+            summary.className = 'text-sm font-medium mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700';
+
+            try {
+                const res = await _fetch('/api/admin/check-images');
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch(parseErr) {
+                    summary.textContent = 'Server returned non-JSON. The request may be blocked by a firewall. Raw response: ' + rawText.substring(0, 200);
+                    summary.className = 'text-sm font-medium mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-mono whitespace-pre-wrap break-all';
+                    diagScanBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Scan Image Paths';
+                    diagScanBtn.disabled = false;
+                    return;
+                }
+                if (!res.ok) {
+                    summary.textContent = `Server error ${res.status}: ${data.error || 'Unknown error'}`;
+                    summary.className = 'text-sm font-medium mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700';
+                    diagScanBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Scan Image Paths';
+                    diagScanBtn.disabled = false;
+                    return;
+                }
+                
+                const hasBroken = data.broken && data.broken.length > 0;
+                summary.textContent = data.summary;
+                summary.className = `text-sm font-medium mb-3 p-3 rounded-lg border ${hasBroken ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
+                
+                if (hasBroken) {
+                    brokenList.classList.remove('hidden');
+                    brokenUl.innerHTML = data.broken.map(b => `<li title="${b.project}"><strong>${b.project}</strong> [${b.type}]: ${b.path}</li>`).join('');
+                    diagFixBtn.classList.remove('hidden');
+                } else {
+                    brokenList.classList.add('hidden');
+                    diagFixBtn.classList.add('hidden');
+                }
+                
+                filesList.classList.remove('hidden');
+                filesUl.innerHTML = (data.disk_files || []).map(f => `<li>${f}</li>`).join('') || '<li class="text-gray-400">No image files found on disk</li>';
+            } catch (err) {
+                summary.textContent = 'Network error or request failed: ' + err.message;
+                summary.className = 'text-sm font-medium mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700';
             }
             
-            // Always show disk files
-            filesList.classList.remove('hidden');
-            filesUl.innerHTML = (data.disk_files || []).map(f => `<li>${f}</li>`).join('') || '<li class="text-gray-400">No files found</li>';
+            diagScanBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Scan Image Paths';
+            diagScanBtn.disabled = false;
         });
     }
 
     if (diagFixBtn) {
         diagFixBtn.addEventListener('click', async () => {
             if (!confirm('This will update the database to fix broken image paths by matching filenames. Continue?')) return;
-            diagFixBtn.textContent = 'Fixing...';
+            diagFixBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Fixing...';
             diagFixBtn.disabled = true;
             
-            const res = await _fetch('/api/diagnostics/fix-paths', { method: 'POST' });
-            const data = await res.json();
+            try {
+                const res = await _fetch('/api/admin/repair-images', { method: 'POST' });
+                const rawText = await res.text();
+                let data;
+                try { data = JSON.parse(rawText); } catch(e) { data = { message: rawText.substring(0, 200) }; }
+                alert(data.message || `Fixed ${data.fixes_applied} path(s). Please re-scan to confirm.`);
+                diagScanBtn?.click();
+            } catch(err) {
+                alert('Fix failed: ' + err.message);
+            }
             
             diagFixBtn.innerHTML = '<i class="fas fa-wrench mr-2"></i> Auto-Fix Broken Paths';
             diagFixBtn.disabled = false;
-            
-            alert(data.message || `Fixed ${data.fixes_applied} path(s). Please re-scan to confirm.`);
-            diagScanBtn?.click(); // Re-run scan
         });
     }
 
