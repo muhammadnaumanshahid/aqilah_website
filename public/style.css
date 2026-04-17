@@ -370,12 +370,18 @@ nav a:not(.btn-primary):hover::after {
     position: relative;
 }
 
+/* Homepage 'Curated Works' — editorial portrait crop (4:5) */
 .project-image img {
     width: 100%;
     aspect-ratio: 4 / 5;
     object-fit: cover;
     transition: transform 0.8s ease;
     display: block;
+}
+
+/* Portfolio grid — landscape crop (4:3), industry standard for design portfolios */
+.portfolio-grid .project-image img {
+    aspect-ratio: 4 / 3;
 }
 
 .project-item:hover .project-image img {
@@ -617,7 +623,8 @@ footer p {
 }
 @media (max-width: 900px) {
     .portfolio-grid { grid-template-columns: 1fr; gap: 2rem; }
-    .portfolio-grid .project-image img { aspect-ratio: 16 / 9; height: auto; }
+    /* Keep 4:3 on tablet — just one column */
+    .portfolio-grid .project-image img { aspect-ratio: 4 / 3; height: auto; }
 }
 
 /* Project Detail Layout */
@@ -856,8 +863,8 @@ footer p {
         height: auto;
     }
     
-    /* Specific overrides for project images on mobile: use aspect-ratio instead of fixed height */
-    .project-image img { aspect-ratio: 3 / 2; height: auto; }
+    /* All project images across all pages: 4:3 on tablet portrait */
+    .project-image img { aspect-ratio: 4 / 3; height: auto; }
     
     .footer-content { gap: 1.5rem; }
 }
@@ -869,7 +876,9 @@ footer p {
     .section-title { font-size: 1.8rem; }
     
     .service-card { padding: 3rem 1.5rem; }
+    /* Mobile: homepage cards slightly more square, portfolio stays 4:3 */
     .project-image img { aspect-ratio: 4 / 3; height: auto; }
+    .portfolio-grid .project-image img { aspect-ratio: 4 / 3; height: auto; }
     .about, .services, .projects, .enquire, .video-section, .portfolio-grid {
         padding: 4rem 0;
     }
