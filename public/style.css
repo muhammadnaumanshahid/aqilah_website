@@ -99,6 +99,20 @@ img {
 
 .btn-primary:hover {
     background-color: var(--color-accent-hover);
+}
+
+.portfolio-filter .filter-btn {
+    transition: all 0.3s;
+    font-family: var(--font-body);
+}
+.portfolio-filter .filter-btn:hover {
+    border-color: var(--color-accent) !important;
+}
+.portfolio-filter .filter-btn.active {
+    background-color: var(--color-accent) !important;
+    color: #fff;
+    border-color: var(--color-accent);
+}
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(122, 40, 40, 0.2);
 }

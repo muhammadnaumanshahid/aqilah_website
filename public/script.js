@@ -229,40 +229,56 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Dynamic Projects Loading
     const gallery = document.querySelector('.project-gallery');
     if (gallery) {
-        // Load projects from API
-        fetch('/api/projects')
-            .then(res => res.json())
-            .then(projects => {
-                if (projects && projects.length > 0) {
-                    let displayProjects = projects;
-                    if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
-                        displayProjects = projects.slice(0, 4);
-                    }
-                    
-                    gallery.innerHTML = ''; // clear static projects
-                    displayProjects.forEach((p, idx) => {
-                        const delayClass = idx % 2 === 1 ? 'delay-1' : '';
-                        gallery.innerHTML += `
-                            <a href="project.html?id=${p.id}" class="project-item scroll-animate ${delayClass} visible">
-                                <div class="project-image">
-                                    <img src="${p.main_image}" alt="${p.title}" loading="lazy" decoding="async">
-                                    <div class="project-overlay">
-                                        <h3>${p.title}</h3>
-                                        <p>${p.location}</p>
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const loadProjects = (type = 'all') => {
+            const url = type === 'all' ? '/api/projects' : `/api/projects?type=${type}`;
+            fetch(url)
+                .then(res => res.json())
+                .then(projects => {
+                    if (projects && projects.length > 0) {
+                        let displayProjects = projects;
+                        if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+                            displayProjects = projects.slice(0, 4);
+                        }
+                        
+                        gallery.innerHTML = '';
+                        displayProjects.forEach((p, idx) => {
+                            const delayClass = idx % 2 === 1 ? 'delay-1' : '';
+                            gallery.innerHTML += `
+                                <a href="project.html?id=${p.id}" class="project-item scroll-animate ${delayClass} visible">
+                                    <div class="project-image">
+                                        <img src="${p.main_image}" alt="${p.title}" loading="lazy" decoding="async">
+                                        <div class="project-overlay">
+                                            <h3>${p.title}</h3>
+                                            <p>${p.location}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </a>
-                        `;
-                    });
-                    
-                    // Restore scroll once DOM paints injected heights
-                    const savedScroll = sessionStorage.getItem('scrollPos_' + window.location.pathname);
-                    if (savedScroll) {
-                        requestAnimationFrame(() => window.scrollTo(0, parseInt(savedScroll, 10)));
+                                </a>
+                            `;
+                        });
+                        
+                        const savedScroll = sessionStorage.getItem('scrollPos_' + window.location.pathname);
+                        if (savedScroll) {
+                            requestAnimationFrame(() => window.scrollTo(0, parseInt(savedScroll, 10)));
+                        }
+                    } else {
+                        gallery.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#666;">No projects found.</p>';
                     }
-                }
-            })
-            .catch(err => console.error("Could not fetch projects:", err));
+                })
+                .catch(err => console.error("Could not fetch projects:", err));
+        };
+        
+        loadProjects();
+        
+        if (filterBtns.length > 0) {
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadProjects(btn.dataset.type);
+                });
+            });
+        }
     } else {
         // For non-portfolio pages, just restore natively on load
         const savedScroll = sessionStorage.getItem('scrollPos_' + window.location.pathname);

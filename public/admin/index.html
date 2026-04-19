@@ -231,7 +231,7 @@
                         </div>
                         <form id="project-form">
                             <input type="hidden" id="project-id">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Title</label>
                                     <input type="text" id="project-title" class="w-full border p-2 rounded" required>
@@ -239,6 +239,15 @@
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Location / Tagline</label>
                                     <input type="text" id="project-location" class="w-full border p-2 rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Property Type</label>
+                                    <select id="project-type" class="w-full border p-2 rounded">
+                                        <option value="HDB">HDB</option>
+                                        <option value="Condo">Condo</option>
+                                        <option value="Landed">Landed</option>
+                                        <option value="Commercial">Commercial</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="mb-4">
@@ -301,6 +310,7 @@
                                 <th class="p-4 font-semibold text-sm w-16">Image</th>
                                 <th class="p-4 font-semibold text-sm">Title</th>
                                 <th class="p-4 font-semibold text-sm">Location</th>
+                                <th class="p-4 font-semibold text-sm">Type</th>
                                 <th class="p-4 font-semibold text-sm text-right w-32">Actions</th>
                             </tr>
                         </thead>

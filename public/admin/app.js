@@ -390,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('title', document.getElementById('project-title').value);
         formData.append('location', document.getElementById('project-location').value);
+        formData.append('property_type', document.getElementById('project-type').value);
         
         const contentJson = {
             scope: document.getElementById('meta-scope').value,
@@ -452,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="p-4"><img src="${p.main_image}" class="w-12 h-12 object-cover rounded bg-gray-100" /></td>
                 <td class="p-4 font-medium">${p.title}</td>
                 <td class="p-4 text-gray-600">${p.location}</td>
+                <td class="p-4"><span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">${p.property_type || 'HDB'}</span></td>
                 <td class="p-4 text-right">
                     <button class="text-blue-500 hover:underline mr-3 edit-btn" data-id="${p.id}">Edit</button>
                     <button class="text-red-500 hover:underline del-btn" data-id="${p.id}">Delete</button>
@@ -500,6 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('project-id').value = project.id;
         document.getElementById('project-title').value = project.title;
         document.getElementById('project-location').value = project.location;
+        document.getElementById('project-type').value = project.property_type || 'HDB';
         document.getElementById('project-image').value = '';
         document.getElementById('main_existing_image').value = project.main_image || '';
         
@@ -620,23 +623,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportBtn = document.getElementById('export-csv-btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', async () => {
-            const res = await _fetch('/api/inquiries');
-            const inquiries = await res.json();
-            if (inquiries.length === 0) return alert('No inquiries to export.');
-            
-            const headers = ['Date', 'Name', 'Email', 'Phone', 'Property Type', 'Budget', 'Timeline', 'Status'];
-            const rows = inquiries.map(i => [
-                new Date(i.date_submitted).toLocaleString().replace(/,/g, ''),
-                i.name, i.email, i.phone, i.property_type, i.budget, i.timeline, i.status
-            ]);
-            
-        const csvContent = [headers.join(','), ...rows.map(e => e.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "inquiries_export.csv");
-            link.click();
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Exporting...';
+            exportBtn.disabled = true;
+            try {
+                window.open('/api/inquiries/export', '_blank');
+            } finally {
+                setTimeout(() => {
+                    exportBtn.innerHTML = '<i class="fas fa-file-csv mr-2"></i> Export to CSV';
+                    exportBtn.disabled = false;
+                }, 2000);
+            }
         });
     }
 

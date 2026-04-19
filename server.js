@@ -315,7 +315,15 @@ const getSettings = () => {
 
 // --- PROJECTS API ---
 app.get('/api/projects', (req, res) => {
-    db.all('SELECT * FROM projects ORDER BY sort_order ASC, id ASC', (err, rows) => {
+    const { type } = req.query;
+    let sql = 'SELECT * FROM projects';
+    const params = [];
+    if (type && type !== 'all') {
+        sql += ' WHERE property_type = ?';
+        params.push(type);
+    }
+    sql += ' ORDER BY sort_order ASC, id ASC';
+    db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -551,6 +559,21 @@ app.get('/api/inquiries', authenticateToken, (req, res) => {
     db.all('SELECT * FROM inquiries ORDER BY date_submitted DESC', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+app.get('/api/inquiries/export', authenticateToken, (req, res) => {
+    db.all('SELECT name, email, phone, property_type, budget, timeline, status, date_submitted FROM inquiries ORDER BY date_submitted DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const csvHeader = 'Name,Email,Phone,Property Type,Budget,Timeline,Status,Date Submitted\n';
+        const csvRows = rows.map(r => 
+            `"${r.name}","${r.email}","${r.phone}","${r.property_type}","${r.budget}","${r.timeline}","${r.status}","${r.date_submitted}"`
+        ).join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=inquiries-${new Date().toISOString().split('T')[0]}.csv`);
+        res.send(csvHeader + csvRows);
     });
 });
 

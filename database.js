@@ -18,10 +18,16 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         location TEXT,
+        property_type TEXT DEFAULT 'HDB',
         main_image TEXT,
         content TEXT,
         sort_order INTEGER DEFAULT 0
     )`);
+    
+    // Migration: add property_type if missing
+    db.run(`ALTER TABLE projects ADD COLUMN property_type TEXT DEFAULT 'HDB'`, (err) => {
+        if (!err) console.log('Migration: property_type column added to projects.');
+    });
 
     // Migration: add sort_order to existing projects table if missing
     db.run(`ALTER TABLE projects ADD COLUMN sort_order INTEGER DEFAULT 0`, (err) => {
