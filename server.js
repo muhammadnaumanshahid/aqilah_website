@@ -188,7 +188,15 @@ app.get('/api/settings', authenticateToken, (req, res) => {
     });
 });
 
+// In-memory cache for public config (5 min TTL)
+const publicConfigCache = { data: null, timestamp: 0 };
+const CACHE_TTL = 5 * 60 * 1000;
+
 app.get('/api/public/config', async (req, res) => {
+    const now = Date.now();
+    if (publicConfigCache.data && (now - publicConfigCache.timestamp < CACHE_TTL)) {
+        return res.json(publicConfigCache.data);
+    }
     db.all("SELECT key, value FROM settings WHERE key IN ('ga_tracking_id', 'recaptcha_site_key')", (err, rows) => {
         const config = { tracking_id: '', recaptcha_site_key: '' };
         if (rows) {
@@ -197,6 +205,8 @@ app.get('/api/public/config', async (req, res) => {
                 if (r.key === 'recaptcha_site_key') config.recaptcha_site_key = r.value;
             });
         }
+        publicConfigCache.data = config;
+        publicConfigCache.timestamp = now;
         res.json(config);
     });
 });

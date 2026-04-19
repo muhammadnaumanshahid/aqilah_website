@@ -70,6 +70,13 @@ db.serialize(() => {
         page TEXT,
         date_submitted DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    
+    // Performance indexes
+    db.run(`CREATE INDEX IF NOT EXISTS idx_inquiries_email ON inquiries(email)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_inquiries_date ON inquiries(date_submitted)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_analytics_visitor ON analytics(visitor_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_analytics_date ON analytics(date_submitted)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_projects_sort ON projects(sort_order)`);
 
     // Seed default admin user if none exists
     // SECURITY TODO: Change the admin password immediately after first login via Admin Dashboard > Team
