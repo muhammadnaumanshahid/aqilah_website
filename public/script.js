@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         gallery.innerHTML += `
                             <a href="project.html?id=${p.id}" class="project-item scroll-animate ${delayClass} visible">
                                 <div class="project-image">
-                                    <img src="${p.main_image}" alt="${p.title}">
+                                    <img src="${p.main_image}" alt="${p.title}" loading="lazy" decoding="async">
                                     <div class="project-overlay">
                                         <h3>${p.title}</h3>
                                         <p>${p.location}</p>

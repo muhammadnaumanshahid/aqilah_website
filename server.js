@@ -111,7 +111,7 @@ app.use((req, res, next) => {
         reqPath = reqPath.endsWith('/') ? `${reqPath}index.html` : `${reqPath}/index.html`;
     }
     
-    if (reqPath.endsWith('.html')) {
+if (reqPath.endsWith('.html')) {
         const fullPath = path.join(__dirname, 'public', reqPath);
         if (fs.existsSync(fullPath)) {
             let content = fs.readFileSync(fullPath, 'utf8');
@@ -128,6 +128,12 @@ app.use((req, res, next) => {
     next();
 });
 
+// Cache for static images (1 month)
+app.use('/images', (req, res, next) => {
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    next();
+});
+
 // Ban all caching on API routes (bypasses aggressive LiteSpeed proxy caching)
 app.use('/api', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -136,7 +142,11 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '1w',
+    etag: true,
+    lastModified: true
+}));
 
 app.use('/api/login', apiLimiter);
 app.use('/api/inquiries', apiLimiter);

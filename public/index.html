@@ -13,9 +13,10 @@
     <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg" href="images/logo.jpg">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=2" media="all">
 </head>
 <body>
     <!-- Global Preloader -->
@@ -68,7 +69,7 @@
     <main>
         <!-- Hero Section -->
         <section id="hero" class="hero">
-            <div class="hero-bg" style="background-image: url('images/home-living-room-1-scaled.webp');"></div>
+            <div class="hero-bg" style="background-image: url('images/home-living-room-1-scaled.webp');" fetchpriority="high"></div>
             <div class="hero-overlay"></div>
             <div class="hero-content">
                 <h1 class="fade-in">Timeless Design for<br>Intentional Living.</h1>
@@ -250,6 +251,6 @@
         </div>
     </footer>
 
-    <script src="script.js?v=2"></script>
+    <script src="script.js?v=2" defer></script>
 </body>
 </html>
