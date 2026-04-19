@@ -72,6 +72,7 @@ db.serialize(() => {
     )`);
 
     // Seed default admin user if none exists
+    // SECURITY TODO: Change the admin password immediately after first login via Admin Dashboard > Team
     db.get('SELECT id FROM users WHERE email = ?', ['admin@homewithaqilah.com'], (err, row) => {
         if (!row) {
             const defaultPassword = bcrypt.hashSync('admin123', 10);
@@ -89,7 +90,8 @@ db.serialize(() => {
                 ['smtp_port', '465'],
                 ['smtp_user', ''],
                 ['smtp_pass', ''],
-                ['recipient_email', 'info@homewithaqilah.com']
+                ['recipient_email', 'info@homewithaqilah.com'],
+                ['site_url', 'https://homewithaqilah.com']
             ];
             const stmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
             defaultSettings.forEach(s => stmt.run(s));
@@ -101,6 +103,13 @@ db.serialize(() => {
     db.get("SELECT value FROM settings WHERE key = 'ga_tracking_id'", (err, row) => {
         if (!row) {
             db.run("INSERT INTO settings (key, value) VALUES ('ga_tracking_id', '')");
+        }
+    });
+    
+    // Ensure site_url exists
+    db.get("SELECT value FROM settings WHERE key = 'site_url'", (err, row) => {
+        if (!row) {
+            db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('site_url', 'https://homewithaqilah.com')");
         }
     });
 });

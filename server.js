@@ -59,13 +59,27 @@ if (!fs.existsSync(imagesRoot)) {
 }
 
 // Multer Config for General Project Uploads
+// Organises uploaded files into a project-named subfolder to match the Media Library structure
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, imagesRoot); // Uploads directly to public/images
+        // IMPORTANT: req.body is NOT available during multer processing in multipart.
+        // We read the folder preference from a query param instead.
+        let projectSlug = req.query.project_slug || 'uploads';
+        // Sanitize: alphanumeric, spaces → underscores, no traversal
+        projectSlug = projectSlug.replace(/[^a-zA-Z0-9\s_\-]/g, '').trim().replace(/\s+/g, '_').substring(0, 60);
+        if (!projectSlug) projectSlug = 'uploads';
+        const destDir = path.resolve(path.join(imagesRoot, projectSlug));
+        // Path traversal guard
+        if (!destDir.startsWith(imagesRoot)) return cb(new Error('Invalid upload path'));
+        fs.mkdirSync(destDir, { recursive: true });
+        cb(null, destDir);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        // Use original filename (sanitized) so paths are human-readable and traceable
+        const base = path.basename(file.originalname, path.extname(file.originalname))
+            .replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase().substring(0, 80);
+        const uniqueSuffix = Date.now();
+        cb(null, `${base}-${uniqueSuffix}${path.extname(file.originalname).toLowerCase()}`);
     }
 });
 const fileFilter = (req, file, cb) => {
@@ -302,15 +316,21 @@ app.post('/api/projects', authenticateToken, upload.any(), (req, res) => {
     try { parsedContent = JSON.parse(content); } catch (e) { parsedContent = {}; }
 
     let main_image = req.body.existing_image || '';
+    // Determine the subfolder prefix used by multer (matches query param project_slug)
+    const slugForPath = req.query.project_slug ? 
+        req.query.project_slug.replace(/[^a-zA-Z0-9\s_\-]/g, '').trim().replace(/\s+/g, '_').substring(0, 60) 
+        : null;
     if (req.files) {
         req.files.forEach(f => {
+            // Build the stored path: /images/<subfolder>/<filename> or /images/<filename>
+            const storedPath = slugForPath ? `/images/${slugForPath}/${f.filename}` : `/images/${f.filename}`;
             if (f.fieldname === 'main_image') {
-                main_image = '/images/' + f.filename;
+                main_image = storedPath;
             } else if (f.fieldname.startsWith('gallery_image_')) {
                 const idx = parseInt(f.fieldname.split('_')[2], 10);
                 if (!parsedContent.gallery) parsedContent.gallery = [];
                 if (!parsedContent.gallery[idx]) parsedContent.gallery[idx] = {};
-                parsedContent.gallery[idx].image = '/images/' + f.filename;
+                parsedContent.gallery[idx].image = storedPath;
             }
         });
     }
@@ -345,15 +365,19 @@ app.put('/api/projects/:id', authenticateToken, upload.any(), (req, res) => {
     try { parsedContent = JSON.parse(content); } catch (e) { parsedContent = {}; }
 
     let main_image = req.body.existing_image || '';
+    const slugForPath = req.query.project_slug ? 
+        req.query.project_slug.replace(/[^a-zA-Z0-9\s_\-]/g, '').trim().replace(/\s+/g, '_').substring(0, 60) 
+        : null;
     if (req.files) {
         req.files.forEach(f => {
+            const storedPath = slugForPath ? `/images/${slugForPath}/${f.filename}` : `/images/${f.filename}`;
             if (f.fieldname === 'main_image') {
-                main_image = '/images/' + f.filename;
+                main_image = storedPath;
             } else if (f.fieldname.startsWith('gallery_image_')) {
                 const idx = parseInt(f.fieldname.split('_')[2], 10);
                 if (!parsedContent.gallery) parsedContent.gallery = [];
                 if (!parsedContent.gallery[idx]) parsedContent.gallery[idx] = {};
-                parsedContent.gallery[idx].image = '/images/' + f.filename;
+                parsedContent.gallery[idx].image = storedPath;
             }
         });
     }
@@ -812,8 +836,10 @@ app.get('/sitemap.xml', (req, res) => {
     db.all('SELECT id FROM projects ORDER BY id DESC', (err, rows) => {
         if (err) return res.status(500).end();
         
-        const baseUrl = 'https://homewithaqilah.com';
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+        db.get("SELECT value FROM settings WHERE key = 'site_url'", (err2, row2) => {
+            let baseUrl = row2 && row2.value ? row2.value : 'https://homewithaqilah.com';
+            
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>${baseUrl}/</loc>
@@ -826,25 +852,31 @@ app.get('/sitemap.xml', (req, res) => {
         <priority>0.9</priority>
     </url>`;
 
-        rows.forEach(p => {
-            xml += `
+            rows.forEach(p => {
+                xml += `
     <url>
         <loc>${baseUrl}/project.html?id=${p.id}</loc>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>`;
+            });
+            
+            xml += '\n</urlset>';
+            
+            res.header('Content-Type', 'application/xml');
+            res.send(xml);
         });
-        
-        xml += '\n</urlset>';
-        
-        res.header('Content-Type', 'application/xml');
-        res.send(xml);
     });
 });
 
 // Catch-all route to serve the SPA Admin if it gets requested directly
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', 'error.html'));
 });
 
 app.listen(PORT, () => {
